@@ -47,8 +47,8 @@ build-python: install-python-deps
 
 .PHONY: install-python-deps
 install-python-deps:
-	$(PYTHON) -m pip install --upgrade pip
-	$(PYTHON) -m pip install -r $(PYTHON_DEPS)
+	pip3 install --upgrade pip
+	pip3 install -r $(PYTHON_DEPS)
 
 # Web interface build
 .PHONY: build-web
