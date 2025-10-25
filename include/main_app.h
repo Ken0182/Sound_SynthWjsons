@@ -82,8 +82,8 @@ private:
     // Generation pipeline
     DSPGraph createGraphFromPrompt(const GenerationRequest& request);
     DSPGraph applySemanticSearch(const std::string& prompt, Role role);
-    DSPGraph applyDecisionHeads(const DSPGraph& graph, const GenerationRequest& request);
-    DSPGraph applyPolicies(const DSPGraph& graph, Role role, const MusicalContext& context);
+    const DSPGraph& applyDecisionHeads(const DSPGraph& graph, const GenerationRequest& request);
+    const DSPGraph& applyPolicies(const DSPGraph& graph, Role role, const MusicalContext& context);
     AudioBuffer renderGraph(const DSPGraph& graph, size_t numSamples);
     Trace createTrace(const GenerationRequest& request, const DSPGraph& graph, const AudioBuffer& audio);
     

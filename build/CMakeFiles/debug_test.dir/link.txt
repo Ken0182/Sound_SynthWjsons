@@ -1,0 +1,1 @@
+/usr/bin/c++  -O3 -march=native -ffast-math -Xlinker --dependency-file=CMakeFiles/debug_test.dir/link.d CMakeFiles/debug_test.dir/debug_test.cpp.o -o debug_test  src/libaiaudio_core.a -ljsoncpp -lyaml-cpp -lpthread -lm

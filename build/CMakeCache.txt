@@ -262,9 +262,6 @@ PKG_CONFIG_ARGN:STRING=
 //pkg-config executable
 PKG_CONFIG_EXECUTABLE:FILEPATH=/usr/bin/pkg-config
 
-//The directory containing a CMake configuration file for nlohmann_json.
-nlohmann_json_DIR:PATH=nlohmann_json_DIR-NOTFOUND
-
 //Path to a library.
 pkgcfg_lib_JSONCPP_jsoncpp:FILEPATH=/usr/lib/x86_64-linux-gnu/libjsoncpp.so
 

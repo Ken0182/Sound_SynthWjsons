@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find required packages
 find_package(PkgConfig REQUIRED)
-find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP REQUIRED jsoncpp)
 find_package(yaml-cpp REQUIRED)
 
@@ -22,6 +21,7 @@ find_package(GTest QUIET)
 if(GTest_FOUND)
     add_subdirectory(tests)
 endif()
+
 
 # Compiler flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -ffast-math")
