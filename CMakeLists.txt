@@ -6,7 +6,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find required packages
 find_package(PkgConfig REQUIRED)
-find_package(yaml-cpp REQUIRED)
+find_package(yaml-cpp QUIET)
+find_package(Threads REQUIRED)
+if(yaml-cpp_FOUND)
+    set(YAMLCPP_LIBRARIES yaml-cpp)
+    set(YAMLCPP_INCLUDE_DIRS ${yaml-cpp_INCLUDE_DIRS})
+else()
+    pkg_check_modules(YAMLCPP REQUIRED yaml-cpp)
+endif()
 
 # Find jsoncpp
 find_package(jsoncpp REQUIRED)
@@ -22,6 +29,7 @@ endif()
 include_directories(include)
 include_directories(third_party)
 include_directories(${JSONCPP_INCLUDE_DIRS})
+include_directories(${YAMLCPP_INCLUDE_DIRS})
 
 # Add subdirectories
 add_subdirectory(src)
@@ -32,14 +40,22 @@ if(GTest_FOUND)
 endif()
 
 
-# Compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -ffast-math")
+# Compiler flags (portable)
+if(NOT MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math")
+    if(CMAKE_SYSTEM_PROCESSOR)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+    endif()
+endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
 
 # Link libraries
 target_link_libraries(aiaudio_generator 
     ${JSONCPP_LIBRARIES}
-    yaml-cpp
-    pthread
-    m
+    ${YAMLCPP_LIBRARIES}
+    Threads::Threads
 )
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(aiaudio_generator m)
+endif()
