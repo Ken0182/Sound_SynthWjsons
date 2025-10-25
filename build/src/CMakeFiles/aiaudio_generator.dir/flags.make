@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/workspace/include -I/workspace/third_party -I/usr/include/jsoncpp
+CXX_INCLUDES = -I/workspace/include -I/workspace/third_party -isystem /usr/include/jsoncpp
 
-CXX_FLAGS = -std=gnu++20 -Wall -Wextra -Wpedantic -O3 -march=native -ffast-math
+CXX_FLAGS = -std=gnu++17 -Wall -Wextra -Wpedantic -O3 -march=native -ffast-math
 

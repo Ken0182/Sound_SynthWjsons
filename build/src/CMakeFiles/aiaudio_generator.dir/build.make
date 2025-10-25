@@ -97,6 +97,7 @@ src/aiaudio_generator: src/CMakeFiles/aiaudio_generator.dir/main.cpp.o
 src/aiaudio_generator: src/CMakeFiles/aiaudio_generator.dir/build.make
 src/aiaudio_generator: src/CMakeFiles/aiaudio_generator.dir/compiler_depend.ts
 src/aiaudio_generator: src/libaiaudio_core.a
+src/aiaudio_generator: /usr/lib/x86_64-linux-gnu/libjsoncpp.so.1.9.6
 src/aiaudio_generator: src/CMakeFiles/aiaudio_generator.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable aiaudio_generator"
 	cd /workspace/build/src && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/aiaudio_generator.dir/link.txt --verbose=$(VERBOSE)

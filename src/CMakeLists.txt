@@ -34,12 +34,12 @@ target_link_libraries(aiaudio_generator aiaudio_core)
 
 # Set C++ standard
 set_target_properties(aiaudio_core PROPERTIES
-    CXX_STANDARD 20
+    CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
 )
 
 set_target_properties(aiaudio_generator PROPERTIES
-    CXX_STANDARD 20
+    CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
 )
 

@@ -49,7 +49,7 @@ public:
     }
     
     static double hardLimit(double value, double minVal, double maxVal) {
-        return std::clamp(value, minVal, maxVal);
+        return std::min(std::max(value, minVal), maxVal);
     }
     
     // Anti-denormal offset

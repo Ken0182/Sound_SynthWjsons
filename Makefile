@@ -16,10 +16,10 @@ WEB_DIR = web
 DIST_DIR = dist
 
 # Compiler flags
-CXXFLAGS = -std=c++20 -O3 -march=native -ffast-math -Wall -Wextra
+CXXFLAGS = -std=c++17 -O3 -march=native -ffast-math -Wall -Wextra
 DEBUG_FLAGS = -g -O0 -DDEBUG
 INCLUDES = -I$(INCLUDE_DIR) -I/usr/include/opencv4
-LIBS = -lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lnlohmann_json -lpthread -lm
+LIBS = -ljsoncpp -lyaml-cpp -lpthread -lm
 
 # Python dependencies
 PYTHON_DEPS = requirements.txt
@@ -39,7 +39,7 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 $(BUILD_DIR)/$(PROJECT_NAME): $(BUILD_DIR)
-	cd $(BUILD_DIR) && $(CMAKE) .. && $(MAKE)
+	cd $(BUILD_DIR) && $(CMAKE) .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON && $(MAKE)
 
 # Python build and setup
 .PHONY: build-python
@@ -69,7 +69,7 @@ dev: build-python
 
 .PHONY: dev-cpp
 dev-cpp: build-cpp
-	./$(BUILD_DIR)/$(PROJECT_NAME)
+	./$(BUILD_DIR)/src/$(PROJECT_NAME)
 
 # Testing targets
 .PHONY: test
@@ -153,7 +153,7 @@ install-deps: install-system-deps install-python-deps install-web-deps
 install-system-deps:
 	sudo apt-get update
 	sudo apt-get install -y cmake g++ python3 python3-pip nodejs npm
-	sudo apt-get install -y libopencv-dev libyaml-cpp-dev nlohmann-json3-dev
+	sudo apt-get install -y libyaml-cpp-dev libjsoncpp-dev
 	sudo apt-get install -y libgtest-dev libgmock-dev pkg-config
 
 .PHONY: install-web-deps

@@ -4,7 +4,7 @@ aiaudio_generator: \
   /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o \
   CMakeFiles/aiaudio_generator.dir/main.cpp.o \
   libaiaudio_core.a \
-  /lib/x86_64-linux-gnu/libjsoncpp.so \
+  /usr/lib/x86_64-linux-gnu/libjsoncpp.so.1.9.6 \
   /lib/x86_64-linux-gnu/libyaml-cpp.so \
   /lib/x86_64-linux-gnu/libpthread.a \
   /lib/x86_64-linux-gnu/libm.so \
@@ -50,7 +50,7 @@ CMakeFiles/aiaudio_generator.dir/main.cpp.o:
 
 libaiaudio_core.a:
 
-/lib/x86_64-linux-gnu/libjsoncpp.so:
+/usr/lib/x86_64-linux-gnu/libjsoncpp.so.1.9.6:
 
 /lib/x86_64-linux-gnu/libyaml-cpp.so:
 

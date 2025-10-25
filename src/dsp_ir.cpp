@@ -4,7 +4,7 @@
 #include <queue>
 #include <sstream>
 #include <fstream>
-#include <json/json.h>
+#include <jsoncpp/json/json.h>
 
 namespace aiaudio {
 

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <sstream>
 #include <random>
+#include <iomanip>
 
 namespace aiaudio {
 

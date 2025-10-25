@@ -1,13 +1,22 @@
 cmake_minimum_required(VERSION 3.20)
 project(AIAudioGenerator)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find required packages
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(JSONCPP REQUIRED jsoncpp)
 find_package(yaml-cpp REQUIRED)
+
+# Find jsoncpp
+find_package(jsoncpp REQUIRED)
+if(jsoncpp_FOUND)
+    set(JSONCPP_LIBRARIES jsoncpp_lib)
+    set(JSONCPP_INCLUDE_DIRS ${jsoncpp_INCLUDE_DIRS})
+else()
+    # Fallback to pkg-config
+    pkg_check_modules(JSONCPP REQUIRED jsoncpp)
+endif()
 
 # Include directories
 include_directories(include)
