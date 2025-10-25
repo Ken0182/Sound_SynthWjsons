@@ -9,21 +9,21 @@
 namespace aiaudio {
 
 // OscillatorStage implementation
-OscillatorStage::OscillatorStage() : frequency_(440.0, 20.0, 20000.0, "frequency"),
-                                    amplitude_(0.5, 0.0, 1.0, "amplitude"),
-                                    phase_(0.0, 0.0, 1.0, "phase") {
+OscillatorStage::OscillatorStage() : frequency_(Hz{440.0}, Hz{20.0}, Hz{20000.0}, "frequency"),
+                                    amplitude_(Percent{0.5}, Percent{0.0}, Percent{1.0}, "amplitude"),
+                                    phase_(Percent{0.0}, Percent{0.0}, Percent{1.0}, "phase") {
 }
 
 void OscillatorStage::process(const AudioBuffer& input, AudioBuffer& output) {
     output.resize(input.size());
     
-    double phaseIncrement = 2.0 * M_PI * frequency_.value / sampleRate_;
+    double phaseIncrement = 2.0 * M_PI * frequency_.value.value / sampleRate_;
     
     for (size_t i = 0; i < input.size(); ++i) {
         double sample = 0.0;
         
         if (waveType_ == "sine") {
-            sample = std::sin(phaseAccumulator_ + phase_.value * 2.0 * M_PI);
+            sample = std::sin(phaseAccumulator_ + phase_.value.value * 2.0 * M_PI);
         } else if (waveType_ == "saw") {
             sample = 2.0 * (phaseAccumulator_ / (2.0 * M_PI)) - 1.0;
         } else if (waveType_ == "square") {
@@ -36,7 +36,7 @@ void OscillatorStage::process(const AudioBuffer& input, AudioBuffer& output) {
             }
         }
         
-        output[i] = sample * amplitude_.value + input[i];
+        output[i] = sample * amplitude_.value.value + input[i];
         phaseAccumulator_ += phaseIncrement;
         
         // Wrap phase
@@ -48,20 +48,20 @@ void OscillatorStage::process(const AudioBuffer& input, AudioBuffer& output) {
 
 void OscillatorStage::setParameter(const std::string& name, const ParamValue& value) {
     if (name == "frequency") {
-        frequency_.setValue(std::get<double>(value));
+        frequency_.setValue(Hz{std::get<double>(value)});
     } else if (name == "amplitude") {
-        amplitude_.setValue(std::get<double>(value));
+        amplitude_.setValue(Percent{std::get<double>(value)});
     } else if (name == "phase") {
-        phase_.setValue(std::get<double>(value));
+        phase_.setValue(Percent{std::get<double>(value)});
     } else if (name == "waveType") {
         waveType_ = std::get<std::string>(value);
     }
 }
 
 ParamValue OscillatorStage::getParameter(const std::string& name) const {
-    if (name == "frequency") return frequency_.value;
-    if (name == "amplitude") return amplitude_.value;
-    if (name == "phase") return phase_.value;
+    if (name == "frequency") return frequency_.value.value;
+    if (name == "amplitude") return amplitude_.value.value;
+    if (name == "phase") return phase_.value.value;
     if (name == "waveType") return waveType_;
     return 0.0;
 }
@@ -75,11 +75,11 @@ void OscillatorStage::reset() {
 }
 
 std::string OscillatorStage::getDescription() const {
-    return "Oscillator: " + waveType_ + " wave at " + std::to_string(frequency_.value) + " Hz";
+    return "Oscillator: " + waveType_ + " wave at " + std::to_string(frequency_.value.value) + " Hz";
 }
 
 // FilterStage implementation
-FilterStage::FilterStage() : cutoff_(1000.0, 20.0, 20000.0, "cutoff"),
+FilterStage::FilterStage() : cutoff_(Hz{1000.0}, Hz{20.0}, Hz{20000.0}, "cutoff"),
                            resonance_(0.1, 0.0, 0.99, "resonance") {
 }
 
@@ -87,7 +87,7 @@ void FilterStage::process(const AudioBuffer& input, AudioBuffer& output) {
     output.resize(input.size());
     
     // Simple biquad filter implementation
-    double w = 2.0 * M_PI * cutoff_.value / 44100.0;
+    double w = 2.0 * M_PI * cutoff_.value.value / 44100.0;
     double cosw = std::cos(w);
     double sinw = std::sin(w);
     double alpha = sinw / (2.0 * resonance_.value);
@@ -117,7 +117,7 @@ void FilterStage::process(const AudioBuffer& input, AudioBuffer& output) {
 
 void FilterStage::setParameter(const std::string& name, const ParamValue& value) {
     if (name == "cutoff") {
-        cutoff_.setValue(std::get<double>(value));
+        cutoff_.setValue(Hz{std::get<double>(value)});
     } else if (name == "resonance") {
         resonance_.setValue(std::get<double>(value));
     } else if (name == "filterType") {
@@ -126,7 +126,7 @@ void FilterStage::setParameter(const std::string& name, const ParamValue& value)
 }
 
 ParamValue FilterStage::getParameter(const std::string& name) const {
-    if (name == "cutoff") return cutoff_.value;
+    if (name == "cutoff") return cutoff_.value.value;
     if (name == "resonance") return resonance_.value;
     if (name == "filterType") return filterType_;
     return 0.0;
@@ -141,14 +141,14 @@ void FilterStage::reset() {
 }
 
 std::string FilterStage::getDescription() const {
-    return "Filter: " + filterType_ + " at " + std::to_string(cutoff_.value) + " Hz";
+    return "Filter: " + filterType_ + " at " + std::to_string(cutoff_.value.value) + " Hz";
 }
 
 // EnvelopeStage implementation
-EnvelopeStage::EnvelopeStage() : attack_(0.01, 0.001, 2.0, "attack"),
-                                decay_(0.1, 0.001, 2.0, "decay"),
-                                sustain_(0.7, 0.0, 1.0, "sustain"),
-                                release_(0.5, 0.001, 5.0, "release") {
+EnvelopeStage::EnvelopeStage() : attack_(Seconds{0.01}, Seconds{0.001}, Seconds{2.0}, "attack"),
+                                decay_(Seconds{0.1}, Seconds{0.001}, Seconds{2.0}, "decay"),
+                                sustain_(Percent{0.7}, Percent{0.0}, Percent{1.0}, "sustain"),
+                                release_(Seconds{0.5}, Seconds{0.001}, Seconds{5.0}, "release") {
 }
 
 void EnvelopeStage::process(const AudioBuffer& input, AudioBuffer& output) {
@@ -161,13 +161,13 @@ void EnvelopeStage::process(const AudioBuffer& input, AudioBuffer& output) {
             state_ = EnvState::ATTACK;
             currentLevel_ = 0.0;
             targetLevel_ = 1.0;
-            rate_ = 1.0 / (attack_.value * 44100.0);
+            rate_ = 1.0 / (attack_.value.value * 44100.0);
             sampleCount_ = 0;
         } else if (input[i] <= 0.001 && state_ != EnvState::IDLE && state_ != EnvState::RELEASE) {
             // Gate off
             state_ = EnvState::RELEASE;
             targetLevel_ = 0.0;
-            rate_ = 1.0 / (release_.value * 44100.0);
+            rate_ = 1.0 / (release_.value.value * 44100.0);
             sampleCount_ = 0;
         }
         
@@ -178,22 +178,22 @@ void EnvelopeStage::process(const AudioBuffer& input, AudioBuffer& output) {
                 if (currentLevel_ >= 1.0) {
                     currentLevel_ = 1.0;
                     state_ = EnvState::DECAY;
-                    targetLevel_ = sustain_.value;
-                    rate_ = (1.0 - sustain_.value) / (decay_.value * 44100.0);
+                    targetLevel_ = sustain_.value.value;
+                    rate_ = (1.0 - sustain_.value.value) / (decay_.value.value * 44100.0);
                     sampleCount_ = 0;
                 }
                 break;
                 
             case EnvState::DECAY:
                 currentLevel_ -= rate_;
-                if (currentLevel_ <= sustain_.value) {
-                    currentLevel_ = sustain_.value;
+                if (currentLevel_ <= sustain_.value.value) {
+                    currentLevel_ = sustain_.value.value;
                     state_ = EnvState::SUSTAIN;
                 }
                 break;
                 
             case EnvState::SUSTAIN:
-                currentLevel_ = sustain_.value;
+                currentLevel_ = sustain_.value.value;
                 break;
                 
             case EnvState::RELEASE:
@@ -216,21 +216,21 @@ void EnvelopeStage::process(const AudioBuffer& input, AudioBuffer& output) {
 
 void EnvelopeStage::setParameter(const std::string& name, const ParamValue& value) {
     if (name == "attack") {
-        attack_.setValue(std::get<double>(value));
+        attack_.setValue(Seconds{std::get<double>(value)});
     } else if (name == "decay") {
-        decay_.setValue(std::get<double>(value));
+        decay_.setValue(Seconds{std::get<double>(value)});
     } else if (name == "sustain") {
-        sustain_.setValue(std::get<double>(value));
+        sustain_.setValue(Percent{std::get<double>(value)});
     } else if (name == "release") {
-        release_.setValue(std::get<double>(value));
+        release_.setValue(Seconds{std::get<double>(value)});
     }
 }
 
 ParamValue EnvelopeStage::getParameter(const std::string& name) const {
-    if (name == "attack") return attack_.value;
-    if (name == "decay") return decay_.value;
-    if (name == "sustain") return sustain_.value;
-    if (name == "release") return release_.value;
+    if (name == "attack") return attack_.value.value;
+    if (name == "decay") return decay_.value.value;
+    if (name == "sustain") return sustain_.value.value;
+    if (name == "release") return release_.value.value;
     return 0.0;
 }
 
@@ -247,21 +247,21 @@ void EnvelopeStage::reset() {
 }
 
 std::string EnvelopeStage::getDescription() const {
-    return "Envelope: A=" + std::to_string(attack_.value) + 
-           "s D=" + std::to_string(decay_.value) + 
-           "s S=" + std::to_string(sustain_.value) + 
-           " R=" + std::to_string(release_.value) + "s";
+    return "Envelope: A=" + std::to_string(attack_.value.value) + 
+           "s D=" + std::to_string(decay_.value.value) + 
+           "s S=" + std::to_string(sustain_.value.value) + 
+           " R=" + std::to_string(release_.value.value) + "s";
 }
 
 // LFOStage implementation
-LFOStage::LFOStage() : rate_(1.0, 0.01, 20.0, "rate"),
-                      depth_(0.5, 0.0, 1.0, "depth") {
+LFOStage::LFOStage() : rate_(Hz{1.0}, Hz{0.01}, Hz{20.0}, "rate"),
+                      depth_(Percent{0.5}, Percent{0.0}, Percent{1.0}, "depth") {
 }
 
 void LFOStage::process(const AudioBuffer& input, AudioBuffer& output) {
     output.resize(input.size());
     
-    double phaseIncrement = 2.0 * M_PI * rate_.value / sampleRate_;
+    double phaseIncrement = 2.0 * M_PI * rate_.value.value / sampleRate_;
     
     for (size_t i = 0; i < input.size(); ++i) {
         double lfoValue = 0.0;
@@ -281,7 +281,7 @@ void LFOStage::process(const AudioBuffer& input, AudioBuffer& output) {
         }
         
         // Scale by depth and center around 0
-        lfoValue = lfoValue * depth_.value;
+        lfoValue = lfoValue * depth_.value.value;
         
         output[i] = input[i] + lfoValue;
         phase_ += phaseIncrement;
@@ -295,17 +295,17 @@ void LFOStage::process(const AudioBuffer& input, AudioBuffer& output) {
 
 void LFOStage::setParameter(const std::string& name, const ParamValue& value) {
     if (name == "rate") {
-        rate_.setValue(std::get<double>(value));
+        rate_.setValue(Hz{std::get<double>(value)});
     } else if (name == "depth") {
-        depth_.setValue(std::get<double>(value));
+        depth_.setValue(Percent{std::get<double>(value)});
     } else if (name == "waveType") {
         waveType_ = std::get<std::string>(value);
     }
 }
 
 ParamValue LFOStage::getParameter(const std::string& name) const {
-    if (name == "rate") return rate_.value;
-    if (name == "depth") return depth_.value;
+    if (name == "rate") return rate_.value.value;
+    if (name == "depth") return depth_.value.value;
     if (name == "waveType") return waveType_;
     return 0.0;
 }
@@ -319,7 +319,7 @@ void LFOStage::reset() {
 }
 
 std::string LFOStage::getDescription() const {
-    return "LFO: " + waveType_ + " at " + std::to_string(rate_.value) + " Hz, depth " + std::to_string(depth_.value);
+    return "LFO: " + waveType_ + " at " + std::to_string(rate_.value.value) + " Hz, depth " + std::to_string(depth_.value.value);
 }
 
 // DSPGraph implementation

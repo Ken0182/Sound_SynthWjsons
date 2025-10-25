@@ -6,17 +6,22 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find required packages
 find_package(PkgConfig REQUIRED)
-find_package(OpenCV REQUIRED)
-find_package(nlohmann_json REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(JSONCPP REQUIRED jsoncpp)
+find_package(yaml-cpp REQUIRED)
 
 # Include directories
 include_directories(include)
 include_directories(third_party)
+include_directories(${JSONCPP_INCLUDE_DIRS})
 
 # Add subdirectories
 add_subdirectory(src)
-add_subdirectory(include)
-add_subdirectory(tests)
+# Tests are optional - only build if GTest is available
+find_package(GTest QUIET)
+if(GTest_FOUND)
+    add_subdirectory(tests)
+endif()
 
 # Compiler flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -ffast-math")
@@ -24,8 +29,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
 
 # Link libraries
 target_link_libraries(aiaudio_generator 
-    ${OpenCV_LIBS}
-    nlohmann_json::nlohmann_json
+    ${JSONCPP_LIBRARIES}
+    yaml-cpp
     pthread
     m
 )

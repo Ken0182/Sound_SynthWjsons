@@ -28,10 +28,26 @@ using Ratio = double;
 using Percentage = double;
 
 // Strong typing for units
-struct Hz { double value; };
-struct dB { double value; };
-struct Seconds { double value; };
-struct Percent { double value; };
+struct Hz { 
+    double value; 
+    bool operator<(const Hz& other) const { return value < other.value; }
+    bool operator>(const Hz& other) const { return value > other.value; }
+};
+struct dB { 
+    double value; 
+    bool operator<(const dB& other) const { return value < other.value; }
+    bool operator>(const dB& other) const { return value > other.value; }
+};
+struct Seconds { 
+    double value; 
+    bool operator<(const Seconds& other) const { return value < other.value; }
+    bool operator>(const Seconds& other) const { return value > other.value; }
+};
+struct Percent { 
+    double value; 
+    bool operator<(const Percent& other) const { return value < other.value; }
+    bool operator>(const Percent& other) const { return value > other.value; }
+};
 
 // Objective vector for MOO
 struct ObjectiveVector {
