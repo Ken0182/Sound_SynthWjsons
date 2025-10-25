@@ -32,15 +32,14 @@ AIAudioGenerator::GenerationResult AIAudioGenerator::generate(const GenerationRe
         }
         
         // Apply decision heads
-        DSPGraph decisionGraph = applyDecisionHeads(graph, request);
+        const DSPGraph& decisionGraph = applyDecisionHeads(graph, request);
         
         // Apply policies if requested
-        if (request.applyPolicies) {
-            decisionGraph = applyPolicies(decisionGraph, request.role, request.context);
-        }
+        const DSPGraph& finalGraph = request.applyPolicies ? 
+            applyPolicies(decisionGraph, request.role, request.context) : decisionGraph;
         
         // Render audio
-        result.audio = renderGraph(decisionGraph, 44100 * 8); // 8 seconds at 44.1kHz
+        result.audio = renderGraph(finalGraph, 44100 * 8); // 8 seconds at 44.1kHz
         
         // Create trace
         result.trace = createTrace(request, decisionGraph, result.audio);
@@ -71,7 +70,7 @@ void AIAudioGenerator::loadPreset(const std::string& presetPath) {
     }
 }
 
-void AIAudioGenerator::savePreset(const std::string& presetPath, const DSPGraph& graph) {
+void AIAudioGenerator::savePreset(const std::string& /* presetPath */, const DSPGraph& /* graph */) {
     // Implementation would serialize graph to JSON
     // This is a placeholder
 }
@@ -123,6 +122,10 @@ DSPGraph AIAudioGenerator::createGraphFromPrompt(const GenerationRequest& reques
                 filter->setParameter("cutoff", 1000.0);
                 filter->setParameter("resonance", 0.3);
                 graph.addStage("filter1", std::move(filter));
+                
+                // Add connections
+                graph.addConnection({"osc1", "env1", "", 1.0});
+                graph.addConnection({"env1", "filter1", "", 1.0});
             }
             break;
             
@@ -146,6 +149,10 @@ DSPGraph AIAudioGenerator::createGraphFromPrompt(const GenerationRequest& reques
                 filter->setParameter("cutoff", 200.0);
                 filter->setParameter("resonance", 0.5);
                 graph.addStage("filter1", std::move(filter));
+                
+                // Add connections
+                graph.addConnection({"osc1", "env1", "", 1.0});
+                graph.addConnection({"env1", "filter1", "", 1.0});
             }
             break;
             
@@ -169,6 +176,9 @@ DSPGraph AIAudioGenerator::createGraphFromPrompt(const GenerationRequest& reques
                 lfo->setParameter("rate", 5.0);
                 lfo->setParameter("depth", 0.3);
                 graph.addStage("lfo1", std::move(lfo));
+                
+                // Add connections
+                graph.addConnection({"osc1", "env1", "", 1.0});
             }
             break;
             
@@ -179,6 +189,7 @@ DSPGraph AIAudioGenerator::createGraphFromPrompt(const GenerationRequest& reques
                 osc->setParameter("frequency", 440.0);
                 osc->setParameter("amplitude", 0.5);
                 graph.addStage("osc1", std::move(osc));
+                // No connections needed for single stage
             }
             break;
     }
@@ -192,10 +203,10 @@ DSPGraph AIAudioGenerator::applySemanticSearch(const std::string& prompt, Role r
     return createGraphFromPrompt({prompt, role, MusicalContext{}, AudioConstraints{}});
 }
 
-DSPGraph AIAudioGenerator::applyDecisionHeads(const DSPGraph& graph, const GenerationRequest& request) {
+const DSPGraph& AIAudioGenerator::applyDecisionHeads(const DSPGraph& graph, const GenerationRequest& request) {
     // Create decision context
     DecisionContext context;
-    context.queryVector = std::vector<double>(384, 0.5); // Placeholder embedding
+    context.queryVector = std::vector<double>(400, 0.5); // Placeholder embedding
     context.role = request.role;
     context.tempo = request.context.tempo;
     context.key = request.context.key;
@@ -204,29 +215,22 @@ DSPGraph AIAudioGenerator::applyDecisionHeads(const DSPGraph& graph, const Gener
     // Get decisions
     DecisionOutput decisions = decisionHeads_->infer(context);
     
-    // Apply decisions to graph
-    // Note: This is a simplified implementation
+    // For now, return the original graph since we can't clone it properly
     // In a real implementation, you would need to clone the graph properly
-    DSPGraph resultGraph;
-    decisionHeads_->applyDecisions(resultGraph, decisions);
-    
-    return resultGraph;
+    return graph;
 }
 
-DSPGraph AIAudioGenerator::applyPolicies(const DSPGraph& graph, Role role, const MusicalContext& context) {
+const DSPGraph& AIAudioGenerator::applyPolicies(const DSPGraph& graph, Role role, const MusicalContext& /* context */) {
     // Get policy for role
     const RolePolicy* policy = policyManager_->getPolicy(role);
     if (policy) {
-        // Note: This is a simplified implementation
+        // For now, return the original graph since we can't clone it properly
         // In a real implementation, you would need to clone the graph properly
-        DSPGraph resultGraph;
-        // Apply policy using policy engine
-        // This would use the PolicyEngine class
-        return resultGraph;
+        return graph;
     }
     
-    // Return empty graph for now since we can't copy
-    return DSPGraph{};
+    // Return original graph if no policy found
+    return graph;
 }
 
 AudioBuffer AIAudioGenerator::renderGraph(const DSPGraph& graph, size_t numSamples) {
@@ -238,7 +242,7 @@ AudioBuffer AIAudioGenerator::renderGraph(const DSPGraph& graph, size_t numSampl
     return output;
 }
 
-Trace AIAudioGenerator::createTrace(const GenerationRequest& request, const DSPGraph& graph, const AudioBuffer& audio) {
+Trace AIAudioGenerator::createTrace(const GenerationRequest& request, const DSPGraph& /* graph */, const AudioBuffer& /* audio */) {
     Trace trace;
     trace.prompt = request.prompt;
     trace.queryHash = "placeholder_hash";
@@ -262,7 +266,7 @@ double AIAudioGenerator::assessQuality(const AudioBuffer& audio, const Generatio
     return metrics.overallScore;
 }
 
-std::vector<std::string> AIAudioGenerator::checkWarnings(const AudioBuffer& audio, const AudioConstraints& constraints) {
+std::vector<std::string> AIAudioGenerator::checkWarnings(const AudioBuffer& audio, const AudioConstraints& /* constraints */) {
     std::vector<std::string> warnings;
     
     // Check for clipping
@@ -296,7 +300,7 @@ std::string AIAudioGenerator::generateExplanation(const GenerationRequest& reque
 }
 
 void AIAudioGenerator::initializeComponents() {
-    mooOptimizer_ = std::make_unique<MOOOptimizer>("metrics.yaml");
+    mooOptimizer_ = std::make_unique<MOOOptimizer>("config/metrics.yaml");
     irParser_ = std::make_unique<IRParser>();
     normalizer_ = std::make_unique<PresetNormalizer>();
     semanticEngine_ = std::make_unique<SemanticFusionEngine>(
@@ -304,7 +308,7 @@ void AIAudioGenerator::initializeComponents() {
     policyManager_ = std::make_unique<PolicyManager>();
     
     // Create decision heads with simple MLP
-    auto mlp = std::make_unique<DecisionMLP>(400, std::vector<size_t>{256, 128}, 20); // 400 input, 20 output
+    auto mlp = std::make_unique<DecisionMLP>(421, std::vector<size_t>{256, 128}, 20); // 421 input, 20 output
     decisionHeads_ = std::make_unique<DecisionHeads>(std::move(mlp));
 }
 
@@ -384,7 +388,7 @@ std::unique_ptr<DSPGraph> PresetManager::loadPreset(const std::string& filePath)
     return std::make_unique<DSPGraph>();
 }
 
-void PresetManager::savePreset(const DSPGraph& graph, const std::string& filePath) {
+void PresetManager::savePreset(const DSPGraph& /* graph */, const std::string& filePath) {
     std::ofstream file(filePath);
     if (!file.is_open()) {
         throw AIAudioException("Could not save preset file: " + filePath);
@@ -486,7 +490,7 @@ bool AudioRenderer::checkRealtimeConstraints(double renderTime, double maxLatenc
 }
 
 // QualityAssessor implementation
-double QualityAssessor::assessQuality(const AudioBuffer& audio, Role role, const AudioConstraints& constraints) {
+double QualityAssessor::assessQuality(const AudioBuffer& audio, Role role, const AudioConstraints& /* constraints */) {
     if (!mooOptimizer_) return 0.5;
     
     MusicalContext context;
@@ -495,7 +499,7 @@ double QualityAssessor::assessQuality(const AudioBuffer& audio, Role role, const
 }
 
 QualityAssessor::QualityMetrics QualityAssessor::getDetailedMetrics(const AudioBuffer& audio, Role role, 
-                                                                   const AudioConstraints& constraints) {
+                                                                   const AudioConstraints& /* constraints */) {
     QualityMetrics metrics;
     
     if (mooOptimizer_) {
