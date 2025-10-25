@@ -45,32 +45,100 @@ A research-grade, production-minded, over-engineered AI audio generation system 
 
 ### Prerequisites
 
-- C++20 compatible compiler (GCC 10+, Clang 12+, MSVC 2019+)
-- CMake 3.20+
-- OpenCV 4.x
-- nlohmann/json
-- yaml-cpp
+- **Python 3.8+** with pip
+- **CMake 3.20+**
+- **C++17 compatible compiler** (GCC, Clang, or MSVC)
+- **Audio libraries** (PortAudio, ALSA on Linux, ASIO on Windows)
 
-### Build Instructions
+### Quick Start
+
+#### Linux/macOS
 
 ```bash
-mkdir build
-cd build
-cmake ..
-make -j$(nproc)
+# Clone and build
+git clone <repository-url>
+cd ai-audio-generator
+make dev-setup
+
+# Test the system
+make test-integration
+
+# Start web server
+make server
+```
+
+#### Windows (MSYS2)
+
+```bash
+# Install MSYS2 and dependencies
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-python mingw-w64-x86_64-python-pip
+
+# Build for MSYS2
+make msys2-mingw
+
+# Or for UCRT64
+make msys2-ucrt
+
+# Install Python module
+make python
+
+# Test
+make test-integration
 ```
 
 ### Dependencies
 
+#### Ubuntu/Debian
 ```bash
-# Ubuntu/Debian
-sudo apt-get install libopencv-dev nlohmann-json3-dev libyaml-cpp-dev
+sudo apt-get update
+sudo apt-get install build-essential cmake python3 python3-pip python3-dev
+sudo apt-get install libyaml-cpp-dev libjsoncpp-dev portaudio19-dev
+sudo apt-get install libasound2-dev  # For ALSA on Linux
+pip3 install -r requirements.txt
+```
 
-# macOS
-brew install opencv nlohmann-json yaml-cpp
+#### macOS
+```bash
+brew install cmake python3 yaml-cpp jsoncpp portaudio
+pip3 install -r requirements.txt
+```
 
-# Windows (vcpkg)
-vcpkg install opencv nlohmann-json yaml-cpp
+#### Windows (MSYS2)
+```bash
+# Install MSYS2 from https://www.msys2.org/
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake
+pacman -S mingw-w64-x86_64-python mingw-w64-x86_64-python-pip
+pacman -S mingw-w64-x86_64-yaml-cpp mingw-w64-x86_64-jsoncpp
+pacman -S mingw-w64-x86_64-portaudio
+pip3 install -r requirements.txt
+```
+
+### Build Targets
+
+```bash
+# Default build
+make all
+
+# Platform-specific builds
+make msys2-mingw    # MSYS2 MinGW
+make msys2-ucrt     # MSYS2 UCRT64
+make debug          # Debug build
+make release        # Release build
+
+# Python module
+make python         # Build and install Python module
+
+# Testing
+make test           # Run C++ tests
+make test-audio     # Test audio generation
+make test-cpp       # Test C++ engine
+make test-integration # Full integration test
+
+# Development
+make dev-setup      # Set up development environment
+make server         # Start web server
+make clean          # Clean build files
+make clean-all      # Clean everything
 ```
 
 ## Usage

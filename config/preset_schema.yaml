@@ -1,0 +1,508 @@
+# AI Audio Generator - Shared Preset Schema
+# Defines the data structure shared between Python and C++ components
+
+schema_version: "1.0.0"
+description: "Shared schema for audio preset data exchange between Python and C++"
+
+# Root preset structure
+preset:
+  type: object
+  required: [name, category, parameters]
+  properties:
+    name:
+      type: string
+      description: "Unique preset name"
+      minLength: 1
+      maxLength: 100
+    
+    category:
+      type: string
+      description: "Preset category"
+      enum: [electronic, guitar, group, pad, bass, lead, fx, texture, arp, drone, rhythm, bell, chord, pluck]
+    
+    description:
+      type: string
+      description: "Human-readable description"
+      maxLength: 500
+    
+    role:
+      type: string
+      description: "Musical role"
+      enum: [PAD, BASS, LEAD, FX, TEXTURE, ARP, DRONE, RHYTHM, BELL, CHORD, PLUCK, UNKNOWN]
+      default: "UNKNOWN"
+    
+    parameters:
+      type: object
+      description: "Audio parameters"
+      properties:
+        # Oscillator parameters
+        oscillator:
+          type: object
+          properties:
+            frequency:
+              type: number
+              description: "Base frequency in Hz"
+              minimum: 20.0
+              maximum: 20000.0
+              default: 440.0
+            
+            waveform:
+              type: string
+              description: "Waveform type"
+              enum: [sine, square, sawtooth, triangle, noise]
+              default: "sine"
+            
+            detune:
+              type: number
+              description: "Detune amount in cents"
+              minimum: -1200.0
+              maximum: 1200.0
+              default: 0.0
+            
+            phase:
+              type: number
+              description: "Initial phase in radians"
+              minimum: 0.0
+              maximum: 6.28318530718
+              default: 0.0
+        
+        # Envelope parameters (ADSR)
+        envelope:
+          type: object
+          properties:
+            attack:
+              type: number
+              description: "Attack time in seconds"
+              minimum: 0.0
+              maximum: 10.0
+              default: 0.1
+            
+            decay:
+              type: number
+              description: "Decay time in seconds"
+              minimum: 0.0
+              maximum: 10.0
+              default: 0.1
+            
+            sustain:
+              type: number
+              description: "Sustain level (0.0 to 1.0)"
+              minimum: 0.0
+              maximum: 1.0
+              default: 0.7
+            
+            release:
+              type: number
+              description: "Release time in seconds"
+              minimum: 0.0
+              maximum: 10.0
+              default: 0.5
+        
+        # Filter parameters
+        filter:
+          type: object
+          properties:
+            type:
+              type: string
+              description: "Filter type"
+              enum: [lowpass, highpass, bandpass, notch, allpass]
+              default: "lowpass"
+            
+            cutoff:
+              type: number
+              description: "Cutoff frequency in Hz"
+              minimum: 20.0
+              maximum: 20000.0
+              default: 1000.0
+            
+            resonance:
+              type: number
+              description: "Resonance/Q factor"
+              minimum: 0.1
+              maximum: 10.0
+              default: 1.0
+            
+            slope:
+              type: integer
+              description: "Filter slope in dB/octave"
+              enum: [12, 24, 48]
+              default: 12
+        
+        # Effects parameters
+        effects:
+          type: array
+          description: "List of audio effects"
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                description: "Effect type"
+                enum: [reverb, delay, chorus, flanger, phaser, distortion, compression, eq]
+              
+              amount:
+                type: number
+                description: "Effect amount (0.0 to 1.0)"
+                minimum: 0.0
+                maximum: 1.0
+                default: 0.5
+              
+              parameters:
+                type: object
+                description: "Effect-specific parameters"
+        
+        # Modulation parameters
+        modulation:
+          type: object
+          properties:
+            lfo_rate:
+              type: number
+              description: "LFO rate in Hz"
+              minimum: 0.01
+              maximum: 20.0
+              default: 1.0
+            
+            lfo_depth:
+              type: number
+              description: "LFO depth (0.0 to 1.0)"
+              minimum: 0.0
+              maximum: 1.0
+              default: 0.1
+            
+            lfo_target:
+              type: string
+              description: "LFO target parameter"
+              enum: [frequency, amplitude, filter_cutoff, filter_resonance]
+              default: "frequency"
+        
+        # Performance parameters
+        performance:
+          type: object
+          properties:
+            polyphony:
+              type: integer
+              description: "Maximum polyphony"
+              minimum: 1
+              maximum: 32
+              default: 8
+            
+            voice_stealing:
+              type: boolean
+              description: "Enable voice stealing"
+              default: true
+            
+            portamento:
+              type: number
+              description: "Portamento time in seconds"
+              minimum: 0.0
+              maximum: 5.0
+              default: 0.0
+        
+        # Quality parameters
+        quality:
+          type: object
+          properties:
+            sample_rate:
+              type: integer
+              description: "Sample rate in Hz"
+              enum: [44100, 48000, 88200, 96000]
+              default: 44100
+            
+            bit_depth:
+              type: integer
+              description: "Bit depth"
+              enum: [16, 24, 32]
+              default: 24
+            
+            oversampling:
+              type: integer
+              description: "Oversampling factor"
+              enum: [1, 2, 4, 8]
+              default: 1
+        
+        # Metadata
+        metadata:
+          type: object
+          properties:
+            author:
+              type: string
+              description: "Preset author"
+              maxLength: 100
+            
+            version:
+              type: string
+              description: "Preset version"
+              pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+              default: "1.0.0"
+            
+            tags:
+              type: array
+              description: "Search tags"
+              items:
+                type: string
+                maxLength: 50
+            
+            created:
+              type: string
+              description: "Creation timestamp"
+              format: date-time
+            
+            modified:
+              type: string
+              description: "Last modification timestamp"
+              format: date-time
+
+# DSP Graph structure
+dsp_graph:
+  type: object
+  required: [nodes, connections]
+  properties:
+    nodes:
+      type: array
+      description: "DSP processing nodes"
+      items:
+        type: object
+        required: [id, type, parameters]
+        properties:
+          id:
+            type: integer
+            description: "Unique node ID"
+            minimum: 0
+          
+          type:
+            type: string
+            description: "Node type"
+            enum: [oscillator, filter, envelope, effect, mixer, output]
+          
+          parameters:
+            type: object
+            description: "Node-specific parameters"
+          
+          position:
+            type: object
+            description: "Visual position"
+            properties:
+              x:
+                type: number
+                description: "X coordinate"
+              y:
+                type: number
+                description: "Y coordinate"
+    
+    connections:
+      type: array
+      description: "Connections between nodes"
+      items:
+        type: object
+        required: [from_node, to_node, from_port, to_port]
+        properties:
+          from_node:
+            type: integer
+            description: "Source node ID"
+          
+          to_node:
+            type: integer
+            description: "Destination node ID"
+          
+          from_port:
+            type: string
+            description: "Source port name"
+          
+          to_port:
+            type: string
+            description: "Destination port name"
+    
+    validation:
+      type: object
+      properties:
+        passed:
+          type: boolean
+          description: "Graph validation status"
+        
+        errors:
+          type: array
+          description: "Validation error messages"
+          items:
+            type: string
+
+# Audio buffer structure
+audio_buffer:
+  type: object
+  required: [data, sample_rate, channels]
+  properties:
+    data:
+      type: array
+      description: "Audio samples"
+      items:
+        type: number
+        minimum: -1.0
+        maximum: 1.0
+    
+    sample_rate:
+      type: integer
+      description: "Sample rate in Hz"
+      enum: [44100, 48000, 88200, 96000]
+    
+    channels:
+      type: integer
+      description: "Number of channels"
+      minimum: 1
+      maximum: 8
+    
+    format:
+      type: string
+      description: "Audio format"
+      enum: [float32, int16, int24, int32]
+      default: "float32"
+
+# Generation request structure
+generation_request:
+  type: object
+  required: [prompt]
+  properties:
+    prompt:
+      type: string
+      description: "Text prompt for generation"
+      minLength: 1
+      maxLength: 500
+    
+    role:
+      type: string
+      description: "Musical role"
+      enum: [PAD, BASS, LEAD, FX, TEXTURE, ARP, DRONE, RHYTHM, BELL, CHORD, PLUCK, UNKNOWN]
+      default: "UNKNOWN"
+    
+    context:
+      type: object
+      properties:
+        tempo:
+          type: number
+          description: "Tempo in BPM"
+          minimum: 60.0
+          maximum: 200.0
+          default: 120.0
+        
+        key:
+          type: string
+          description: "Musical key"
+          enum: [C, C#, D, D#, E, F, F#, G, G#, A, A#, B]
+          default: "C"
+        
+        scale:
+          type: string
+          description: "Musical scale"
+          enum: [major, minor, dorian, phrygian, lydian, mixolydian, locrian]
+          default: "major"
+    
+    constraints:
+      type: object
+      properties:
+        max_cpu:
+          type: number
+          description: "Maximum CPU usage (0.0 to 1.0)"
+          minimum: 0.1
+          maximum: 1.0
+          default: 0.8
+        
+        max_latency:
+          type: number
+          description: "Maximum latency in milliseconds"
+          minimum: 1.0
+          maximum: 100.0
+          default: 10.0
+        
+        max_memory:
+          type: integer
+          description: "Maximum memory usage in MB"
+          minimum: 100
+          maximum: 8192
+          default: 1024
+    
+    options:
+      type: object
+      properties:
+        use_semantic_search:
+          type: boolean
+          description: "Enable semantic search"
+          default: true
+        
+        apply_policies:
+          type: boolean
+          description: "Apply role-based policies"
+          default: true
+        
+        optimize_for_moo:
+          type: boolean
+          description: "Use multi-objective optimization"
+          default: true
+
+# Generation result structure
+generation_result:
+  type: object
+  required: [audio, quality_score]
+  properties:
+    audio:
+      $ref: "#/audio_buffer"
+    
+    quality_score:
+      type: number
+      description: "Overall quality score (0.0 to 1.0)"
+      minimum: 0.0
+      maximum: 1.0
+    
+    metrics:
+      type: object
+      properties:
+        semantic_match:
+          type: number
+          description: "Semantic match score"
+          minimum: 0.0
+          maximum: 1.0
+        
+        mix_readiness:
+          type: number
+          description: "Mix readiness score"
+          minimum: 0.0
+          maximum: 1.0
+        
+        perceptual_quality:
+          type: number
+          description: "Perceptual quality score"
+          minimum: 0.0
+          maximum: 1.0
+        
+        stability:
+          type: number
+          description: "Stability score"
+          minimum: 0.0
+          maximum: 1.0
+    
+    warnings:
+      type: array
+      description: "Warning messages"
+      items:
+        type: string
+    
+    explanation:
+      type: string
+      description: "Human-readable explanation of the generation"
+    
+    trace:
+      type: object
+      description: "Generation trace for debugging"
+      properties:
+        steps:
+          type: array
+          description: "Generation steps"
+          items:
+            type: object
+            properties:
+              step:
+                type: string
+                description: "Step name"
+              duration:
+                type: number
+                description: "Step duration in seconds"
+              parameters:
+                type: object
+                description: "Step parameters"
