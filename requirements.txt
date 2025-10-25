@@ -33,3 +33,11 @@ libgmock-dev>=1.10.0
 # emscripten>=3.1.0
 # nodejs>=16.0.0
 # npm>=8.0.0
+
+# Python Web Dependencies
+flask>=2.3.0
+flask-cors>=4.0.0
+pygame>=2.5.0
+sounddevice>=0.4.6
+soundfile>=0.12.1
+numpy>=1.24.0
