@@ -1,0 +1,127 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default Configuration",
+      "description": "Default build configuration",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON"
+      }
+    },
+    {
+      "name": "msys2-mingw",
+      "displayName": "MSYS2 MinGW Configuration",
+      "description": "Build configuration for MSYS2 with MinGW-w64",
+      "generator": "MinGW Makefiles",
+      "binaryDir": "${sourceDir}/build-msys2",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+        "CMAKE_PREFIX_PATH": "C:/msys64/mingw64",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_RC_COMPILER": "windres"
+      },
+      "environment": {
+        "PATH": "C:/msys64/mingw64/bin;C:/msys64/usr/bin;${env:PATH}"
+      }
+    },
+    {
+      "name": "msys2-ucrt",
+      "displayName": "MSYS2 UCRT Configuration",
+      "description": "Build configuration for MSYS2 with UCRT64",
+      "generator": "MinGW Makefiles",
+      "binaryDir": "${sourceDir}/build-msys2-ucrt",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+        "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_RC_COMPILER": "windres"
+      },
+      "environment": {
+        "PATH": "C:/msys64/ucrt64/bin;C:/msys64/usr/bin;${env:PATH}"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug Configuration",
+      "description": "Debug build configuration",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+        "CMAKE_CXX_FLAGS_DEBUG": "-g -O0 -DDEBUG"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release Configuration",
+      "description": "Release build configuration",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O3 -march=native -ffast-math -DNDEBUG"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "displayName": "Default Build",
+      "description": "Default build preset"
+    },
+    {
+      "name": "msys2-mingw",
+      "configurePreset": "msys2-mingw",
+      "displayName": "MSYS2 MinGW Build",
+      "description": "Build for MSYS2 MinGW environment"
+    },
+    {
+      "name": "msys2-ucrt",
+      "configurePreset": "msys2-ucrt",
+      "displayName": "MSYS2 UCRT Build",
+      "description": "Build for MSYS2 UCRT environment"
+    },
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "displayName": "Debug Build",
+      "description": "Debug build preset"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "displayName": "Release Build",
+      "description": "Release build preset"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "displayName": "Default Tests",
+      "description": "Run tests with default configuration"
+    },
+    {
+      "name": "msys2-mingw",
+      "configurePreset": "msys2-mingw",
+      "displayName": "MSYS2 MinGW Tests",
+      "description": "Run tests with MSYS2 MinGW configuration"
+    }
+  ]
+}

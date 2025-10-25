@@ -15,11 +15,12 @@ from graph_builder import GraphBuilder
 from semantic_embeddings import SemanticSearchEngine
 from roles_policies import RolePolicyManager
 from decision_heads import DecisionEngine, Context
+from cpp_engine import create_hybrid_interface, CPP_ENGINE_AVAILABLE
 
 class AudioPresetGenerator:
     """Main class that orchestrates the entire JSON-to-Audio pipeline"""
     
-    def __init__(self):
+    def __init__(self, use_cpp_engine: bool = True):
         self.parser = JsonPresetParser()
         self.normalizer = UnitNormalizer()
         self.graph_builder = GraphBuilder()
@@ -28,6 +29,17 @@ class AudioPresetGenerator:
         self.decision_engine = DecisionEngine()
         self.presets: List[Any] = []
         self.normalized_presets: List[Any] = []
+        
+        # Initialize C++ engine if available
+        self.use_cpp_engine = use_cpp_engine and CPP_ENGINE_AVAILABLE
+        self.cpp_engine = None
+        if self.use_cpp_engine:
+            try:
+                self.cpp_engine = create_hybrid_interface(use_cpp=True)
+                print("C++ engine initialized successfully")
+            except Exception as e:
+                print(f"Failed to initialize C++ engine: {e}")
+                self.use_cpp_engine = False
     
     def load_presets(self, file_paths: List[str]) -> None:
         """Load presets from JSON files"""
@@ -164,7 +176,28 @@ class AudioPresetGenerator:
         else:
             print("Graph validation passed")
         
-        # Step 10: Compile final preset
+        # Step 10: Generate audio using C++ engine if available
+        audio_data = None
+        if self.use_cpp_engine and self.cpp_engine:
+            try:
+                # Convert preset to audio using C++ engine
+                preset_dict = {
+                    "frequency": base_preset.oscillator.frequency,
+                    "waveform": base_preset.oscillator.waveform,
+                    "attack": base_preset.envelope.attack,
+                    "decay": base_preset.envelope.decay,
+                    "sustain": base_preset.envelope.sustain,
+                    "release": base_preset.envelope.release,
+                    "cutoff": base_preset.filter.cutoff,
+                    "resonance": base_preset.filter.resonance
+                }
+                audio_data = self.cpp_engine.generate_from_preset(preset_dict, duration=2.0)
+                print(f"Generated audio using C++ engine: {len(audio_data)} samples")
+            except Exception as e:
+                print(f"Error generating audio with C++ engine: {e}")
+                audio_data = None
+        
+        # Step 11: Compile final preset
         final_preset = {
             "name": f"Generated_{query.replace(' ', '_')}",
             "base_preset": best_preset_id,
@@ -187,7 +220,9 @@ class AudioPresetGenerator:
                 "oscillator_detune": base_preset.oscillator.detune,
                 "envelope_attack": base_preset.envelope.attack,
                 "envelope_release": base_preset.envelope.release
-            }
+            },
+            "audio_data": audio_data.tolist() if audio_data is not None else None,
+            "cpp_engine_used": self.use_cpp_engine
         }
         
         return final_preset
@@ -214,6 +249,56 @@ class AudioPresetGenerator:
             explanation += f"✗ Graph validation failed ({len(preset['graph']['validation_errors'])} errors)\n"
         
         return explanation
+    
+    def generate_audio(self, query: str, role: Optional[str] = None,
+                      tempo: Optional[float] = None, key: Optional[str] = None,
+                      duration: float = 2.0) -> np.ndarray:
+        """Generate audio directly from query using the best available engine"""
+        if self.use_cpp_engine and self.cpp_engine:
+            # Use C++ engine for direct audio generation
+            try:
+                audio = self.cpp_engine.generate_audio(
+                    prompt=query,
+                    role=role or "UNKNOWN",
+                    tempo=tempo or 120.0,
+                    key=key or "C"
+                )
+                return audio
+            except Exception as e:
+                print(f"Error with C++ engine: {e}")
+                # Fallback to Python generation
+                pass
+        
+        # Fallback to Python-only generation
+        print("Using Python-only audio generation")
+        
+        # Generate a simple tone based on query
+        sample_rate = 44100
+        t = np.linspace(0, duration, int(sample_rate * duration), False)
+        
+        # Simple frequency mapping based on role
+        if role == "BASS":
+            frequency = 80.0
+        elif role == "LEAD":
+            frequency = 440.0
+        elif role == "PAD":
+            frequency = 220.0
+        else:
+            frequency = 440.0
+        
+        # Generate audio
+        audio = np.sin(2 * np.pi * frequency * t)
+        
+        # Apply simple envelope
+        attack_samples = int(0.1 * sample_rate)
+        release_samples = int(0.5 * sample_rate)
+        
+        if len(audio) > attack_samples:
+            audio[:attack_samples] *= np.linspace(0, 1, attack_samples)
+        if len(audio) > release_samples:
+            audio[-release_samples:] *= np.linspace(1, 0, release_samples)
+        
+        return audio.astype(np.float32)
 
 def main():
     """Main application entry point"""
@@ -230,11 +315,19 @@ def main():
                        help="Only perform search, don't generate preset")
     parser.add_argument("--explain", action="store_true",
                        help="Generate explanation of the preset")
+    parser.add_argument("--generate-audio", action="store_true",
+                       help="Generate audio file from preset")
+    parser.add_argument("--output", type=str, default="output.wav",
+                       help="Output audio file path")
+    parser.add_argument("--duration", type=float, default=2.0,
+                       help="Audio duration in seconds")
+    parser.add_argument("--use-cpp", action="store_true", default=True,
+                       help="Use C++ engine for audio generation")
     
     args = parser.parse_args()
     
     # Create generator
-    generator = AudioPresetGenerator()
+    generator = AudioPresetGenerator(use_cpp_engine=args.use_cpp)
     
     try:
         # Load and process presets
@@ -258,6 +351,32 @@ def main():
                     print(generator.explain_preset(preset))
                 else:
                     print(json.dumps(preset, indent=2, default=str))
+                
+                # Generate audio if requested
+                if args.generate_audio:
+                    print("\n" + "="*60)
+                    print("GENERATING AUDIO")
+                    print("="*60)
+                    
+                    audio = generator.generate_audio(
+                        args.query, args.role, args.tempo, args.key, args.duration
+                    )
+                    
+                    if audio is not None and len(audio) > 0:
+                        # Save audio to file
+                        try:
+                            import soundfile as sf
+                            sf.write(args.output, audio, 44100)
+                            print(f"Audio saved to: {args.output}")
+                            print(f"Duration: {len(audio) / 44100:.2f} seconds")
+                            print(f"Samples: {len(audio)}")
+                        except ImportError:
+                            print("Warning: soundfile not available, cannot save audio")
+                            print(f"Generated {len(audio)} audio samples")
+                        except Exception as e:
+                            print(f"Error saving audio: {e}")
+                    else:
+                        print("Failed to generate audio")
             else:
                 print("Failed to generate preset")
                 sys.exit(1)

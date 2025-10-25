@@ -26,7 +26,13 @@ audio_interface: Optional[AudioInterface] = None
 @app.route('/')
 def index():
     """Serve the main web interface"""
-    return render_template('index.html')
+    # Check if React app is built
+    react_index = os.path.join('static', 'index.html')
+    if os.path.exists(react_index):
+        return send_from_directory('static', 'index.html')
+    else:
+        # Fallback to Flask template
+        return render_template('index.html')
 
 @app.route('/api/presets')
 def get_presets():
@@ -144,6 +150,11 @@ def get_preset_parameters(preset_name: str):
         'name': preset_name,
         'parameters': info['parameters']
     })
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    """Serve static files from the static directory"""
+    return send_from_directory('static', filename)
 
 def initialize_audio_interface(json_files: List[str], engine: Optional[AudioEngine] = None):
     """Initialize the audio interface with JSON datasets"""
