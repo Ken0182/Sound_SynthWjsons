@@ -6,7 +6,10 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include <yaml-cpp/yaml.h>
+
+#ifdef AIAUDIO_ENABLE_YAML
+namespace YAML { class Node; }
+#endif
 
 namespace aiaudio {
 
@@ -63,9 +66,11 @@ public:
     
 private:
     // YAML parsing helpers
+    #ifdef AIAUDIO_ENABLE_YAML
     PolicyConstraint parseConstraint(const YAML::Node& node) const;
     std::map<std::string, double> parsePriors(const YAML::Node& node) const;
     std::map<std::string, double> parsePenalties(const YAML::Node& node) const;
+    #endif
     
     // Constraint validation
     bool validateConstraint(const PolicyConstraint& constraint, double value) const;

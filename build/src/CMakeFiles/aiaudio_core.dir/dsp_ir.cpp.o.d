@@ -317,12 +317,6 @@ src/CMakeFiles/aiaudio_core.dir/dsp_ir.cpp.o: /workspace/src/dsp_ir.cpp \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/random \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/random.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14/bits/opt_random.h \
-  /usr/lib/llvm-20/lib/clang/20/include/pmmintrin.h \
-  /usr/lib/llvm-20/lib/clang/20/include/emmintrin.h \
-  /usr/lib/llvm-20/lib/clang/20/include/xmmintrin.h \
-  /usr/lib/llvm-20/lib/clang/20/include/mmintrin.h \
-  /usr/lib/llvm-20/lib/clang/20/include/mm_malloc.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/stdlib.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/random.tcc \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/numeric \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/stl_numeric.h \
@@ -346,15 +340,4 @@ src/CMakeFiles/aiaudio_core.dir/dsp_ir.cpp.o: /workspace/src/dsp_ir.cpp \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/fstream \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14/bits/basic_file.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14/bits/c++io.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/fstream.tcc \
-  /usr/include/jsoncpp/json/json.h /usr/include/jsoncpp/json/config.h \
-  /usr/include/jsoncpp/json/allocator.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/cstring \
-  /usr/include/string.h /usr/include/strings.h \
-  /usr/include/jsoncpp/json/version.h \
-  /usr/include/jsoncpp/json/json_features.h \
-  /usr/include/jsoncpp/json/forwards.h \
-  /usr/include/jsoncpp/json/reader.h /usr/include/jsoncpp/json/value.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/stack \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/stl_stack.h \
-  /usr/include/jsoncpp/json/writer.h
+  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/fstream.tcc

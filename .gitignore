@@ -1,0 +1,35 @@
+# Build and IDE artifacts
+build/
+.cmake/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+Testing/
+CTestTestfile.cmake
+Makefile
+*.o
+*.obj
+*.pdb
+*.ilk
+*.dll
+*.lib
+*.so
+*.dylib
+*.a
+*.lo
+*.la
+*.dSYM/
+
+# Node/Web
+web/node_modules/
+web/dist/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# OS files
+.DS_Store
+Thumbs.db

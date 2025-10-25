@@ -31,15 +31,15 @@ WEB_DEPS = package.json
 .PHONY: all
 all: build-cpp build-python build-web
 
-# C++ Build targets
+# C++ Build targets (out-of-source build; auto-clean stale cache)
 .PHONY: build-cpp
-build-cpp: $(BUILD_DIR)/$(PROJECT_NAME)
-
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
-
-$(BUILD_DIR)/$(PROJECT_NAME): $(BUILD_DIR)
-	cd $(BUILD_DIR) && $(CMAKE) .. && $(MAKE)
+build-cpp:
+	rm -rf $(BUILD_DIR)
+	$(CMAKE) -S . -B $(BUILD_DIR) \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_CXX_STANDARD=20 \
+		-DCMAKE_CXX_STANDARD_REQUIRED=ON
+	$(CMAKE) --build $(BUILD_DIR) -- -j$$(command -v nproc >/dev/null 2>&1 && nproc || echo 4)
 
 # Python build and setup
 .PHONY: build-python
@@ -69,7 +69,7 @@ dev: build-python
 
 .PHONY: dev-cpp
 dev-cpp: build-cpp
-	./$(BUILD_DIR)/$(PROJECT_NAME)
+	./$(BUILD_DIR)/src/$(PROJECT_NAME)
 
 # Testing targets
 .PHONY: test
@@ -81,7 +81,7 @@ test-python: build-python
 
 .PHONY: test-cpp
 test-cpp: build-cpp
-	cd $(BUILD_DIR) && ctest --verbose
+	ctest --test-dir $(BUILD_DIR) --verbose
 
 # Audio system specific targets
 .PHONY: audio-demo

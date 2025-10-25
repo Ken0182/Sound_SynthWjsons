@@ -317,12 +317,6 @@ src/CMakeFiles/aiaudio_generator.dir/main.cpp.o: /workspace/src/main.cpp \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/random \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/random.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14/bits/opt_random.h \
-  /usr/lib/llvm-20/lib/clang/20/include/pmmintrin.h \
-  /usr/lib/llvm-20/lib/clang/20/include/emmintrin.h \
-  /usr/lib/llvm-20/lib/clang/20/include/xmmintrin.h \
-  /usr/lib/llvm-20/lib/clang/20/include/mmintrin.h \
-  /usr/lib/llvm-20/lib/clang/20/include/mm_malloc.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/stdlib.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/random.tcc \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/numeric \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/stl_numeric.h \
@@ -342,50 +336,6 @@ src/CMakeFiles/aiaudio_generator.dir/main.cpp.o: /workspace/src/main.cpp \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/unordered_set.h \
   /workspace/include/normalization.h \
   /workspace/include/semantic_fusion.h \
-  /workspace/include/roles_policies.h /usr/include/yaml-cpp/yaml.h \
-  /usr/include/yaml-cpp/parser.h /usr/include/yaml-cpp/dll.h \
-  /usr/include/yaml-cpp/emitter.h /usr/include/yaml-cpp/binary.h \
-  /usr/include/yaml-cpp/emitterdef.h \
-  /usr/include/yaml-cpp/emittermanip.h /usr/include/yaml-cpp/null.h \
-  /usr/include/yaml-cpp/ostream_wrapper.h \
-  /usr/include/yaml-cpp/emitterstyle.h \
-  /usr/include/yaml-cpp/stlemitter.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/list \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/stl_list.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/list.tcc \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/set \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/stl_set.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/stl_multiset.h \
-  /usr/include/yaml-cpp/exceptions.h /usr/include/yaml-cpp/mark.h \
-  /usr/include/yaml-cpp/noexcept.h /usr/include/yaml-cpp/traits.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/utility \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/stl_relops.h \
-  /usr/include/yaml-cpp/node/node.h \
-  /usr/include/yaml-cpp/node/detail/iterator_fwd.h \
-  /usr/include/yaml-cpp/node/ptr.h /usr/include/yaml-cpp/node/type.h \
-  /usr/include/yaml-cpp/node/impl.h \
-  /usr/include/yaml-cpp/node/detail/memory.h \
-  /usr/include/yaml-cpp/node/detail/node.h \
-  /usr/include/yaml-cpp/node/detail/node_ref.h \
-  /usr/include/yaml-cpp/node/detail/node_data.h \
-  /usr/include/yaml-cpp/node/detail/node_iterator.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/iterator \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/stream_iterator.h \
-  /usr/include/yaml-cpp/node/iterator.h \
-  /usr/include/yaml-cpp/node/detail/iterator.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/atomic \
-  /usr/include/yaml-cpp/node/convert.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/valarray \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/valarray_array.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/valarray_array.tcc \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/valarray_before.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/slice_array.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/valarray_after.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/gslice.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/gslice_array.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/mask_array.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/indirect_array.h \
-  /usr/include/yaml-cpp/node/detail/impl.h \
-  /usr/include/yaml-cpp/node/parse.h /usr/include/yaml-cpp/node/emit.h \
+  /workspace/include/roles_policies.h \
   /workspace/include/decision_heads.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/iostream

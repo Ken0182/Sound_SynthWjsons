@@ -4,10 +4,18 @@
 #include <algorithm>
 #include <random>
 
+#ifdef AIAUDIO_ENABLE_YAML
+#include <yaml-cpp/yaml.h>
+#endif
+
 namespace aiaudio {
 
 // PolicyCompiler implementation
 RolePolicy PolicyCompiler::loadPolicy(const std::string& yamlContent, Role role) {
+#ifndef AIAUDIO_ENABLE_YAML
+    (void)yamlContent;
+    throw AIAudioException("YAML support not available: rebuild with yaml-cpp installed");
+#else
     YAML::Node root = YAML::Load(yamlContent);
     
     RolePolicy policy;
@@ -37,9 +45,14 @@ RolePolicy PolicyCompiler::loadPolicy(const std::string& yamlContent, Role role)
     }
     
     return policy;
+#endif
 }
 
 RolePolicy PolicyCompiler::loadPolicyFromFile(const std::string& filePath, Role role) {
+#ifndef AIAUDIO_ENABLE_YAML
+    (void)filePath; (void)role;
+    throw AIAudioException("YAML support not available: rebuild with yaml-cpp installed");
+#else
     std::ifstream file(filePath);
     if (!file.is_open()) {
         throw AIAudioException("Could not open policy file: " + filePath);
@@ -49,6 +62,7 @@ RolePolicy PolicyCompiler::loadPolicyFromFile(const std::string& filePath, Role 
     buffer << file.rdbuf();
     
     return loadPolicy(buffer.str(), role);
+#endif
 }
 
 std::vector<std::string> PolicyCompiler::validatePolicy(const RolePolicy& policy) const {
@@ -152,6 +166,7 @@ RolePolicy PolicyCompiler::resolveConflicts(const std::vector<RolePolicy>& polic
     return result;
 }
 
+#ifdef AIAUDIO_ENABLE_YAML
 PolicyConstraint PolicyCompiler::parseConstraint(const YAML::Node& node) const {
     PolicyConstraint constraint;
     
@@ -180,7 +195,9 @@ PolicyConstraint PolicyCompiler::parseConstraint(const YAML::Node& node) const {
     
     return constraint;
 }
+#endif
 
+#ifdef AIAUDIO_ENABLE_YAML
 std::map<std::string, double> PolicyCompiler::parsePriors(const YAML::Node& node) const {
     std::map<std::string, double> priors;
     
@@ -192,7 +209,9 @@ std::map<std::string, double> PolicyCompiler::parsePriors(const YAML::Node& node
     
     return priors;
 }
+#endif
 
+#ifdef AIAUDIO_ENABLE_YAML
 std::map<std::string, double> PolicyCompiler::parsePenalties(const YAML::Node& node) const {
     std::map<std::string, double> penalties;
     
@@ -204,6 +223,7 @@ std::map<std::string, double> PolicyCompiler::parsePenalties(const YAML::Node& n
     
     return penalties;
 }
+#endif
 
 // PolicyEngine implementation
 void PolicyEngine::applyPolicy(DSPGraph& graph, const RolePolicy& policy, 

@@ -13,7 +13,7 @@ target_link_libraries(aiaudio_tests
     aiaudio_core
     GTest::gtest
     GTest::gtest_main
-    pthread
+    Threads::Threads
 )
 
 # Include directories

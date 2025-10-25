@@ -12,26 +12,24 @@ if [ ! -f "CMakeLists.txt" ]; then
     exit 1
 fi
 
-# Create build directory
-echo "Creating build directory..."
-mkdir -p build
-cd build
+echo "Preparing clean out-of-source build..."
+rm -rf build
 
-# Configure with CMake
+# Configure with CMake (out-of-source)
 echo "Configuring with CMake..."
-cmake .. \
+cmake -S . -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_CXX_STANDARD=20 \
     -DCMAKE_CXX_STANDARD_REQUIRED=ON
 
 # Build the project
 echo "Building project..."
-make -j$(nproc)
+cmake --build build -- -j$(nproc)
 
 # Run tests
 echo "Running tests..."
-if [ -f "tests/aiaudio_tests" ]; then
-    ./tests/aiaudio_tests
+if [ -f "build/tests/aiaudio_tests" ]; then
+    ./build/tests/aiaudio_tests
     echo "Tests completed successfully!"
 else
     echo "Warning: Test executable not found. Skipping tests."
@@ -39,8 +37,8 @@ fi
 
 # Run the main application
 echo "Running main application..."
-if [ -f "aiaudio_generator" ]; then
-    ./aiaudio_generator
+if [ -f "build/src/aiaudio_generator" ]; then
+    ./build/src/aiaudio_generator
     echo "Main application completed successfully!"
 else
     echo "Error: Main executable not found."
@@ -49,8 +47,8 @@ fi
 
 # Run example usage
 echo "Running example usage..."
-if [ -f "example_usage" ]; then
-    ./example_usage
+if [ -f "build/example_usage" ]; then
+    ./build/example_usage
     echo "Example usage completed successfully!"
 else
     echo "Warning: Example executable not found. Skipping example."
@@ -60,4 +58,4 @@ echo "=== Build and Run Complete ==="
 echo "Generated files:"
 ls -la *.raw 2>/dev/null || echo "No audio files generated"
 echo "Build artifacts:"
-ls -la
+ls -la build

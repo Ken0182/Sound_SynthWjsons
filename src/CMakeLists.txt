@@ -14,10 +14,9 @@ add_library(aiaudio_core
 
 # Link libraries
 target_link_libraries(aiaudio_core
-    ${JSONCPP_LIBRARIES}
-    yaml-cpp
-    pthread
-    m
+    ${JSONCPP_LIBS}
+    $<$<BOOL:${AIAUDIO_HAVE_YAML}>:yaml-cpp>
+    Threads::Threads
 )
 
 # Include directories
@@ -44,12 +43,11 @@ set_target_properties(aiaudio_generator PROPERTIES
 )
 
 # Compiler flags
-target_compile_options(aiaudio_core PRIVATE
-    -Wall -Wextra -Wpedantic
-    -O3 -march=native -ffast-math
-)
-
-target_compile_options(aiaudio_generator PRIVATE
-    -Wall -Wextra -Wpedantic
-    -O3 -march=native -ffast-math
-)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(aiaudio_core PRIVATE -Wall -Wextra -Wpedantic -O3 -ffast-math)
+    target_compile_options(aiaudio_generator PRIVATE -Wall -Wextra -Wpedantic -O3 -ffast-math)
+    # -march=native omitted for portability
+elseif(MSVC)
+    target_compile_options(aiaudio_core PRIVATE /W4)
+    target_compile_options(aiaudio_generator PRIVATE /W4)
+endif()

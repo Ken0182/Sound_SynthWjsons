@@ -318,12 +318,6 @@ src/CMakeFiles/aiaudio_core.dir/moo_optimization.cpp.o: \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/random \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/random.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14/bits/opt_random.h \
-  /usr/lib/llvm-20/lib/clang/20/include/pmmintrin.h \
-  /usr/lib/llvm-20/lib/clang/20/include/emmintrin.h \
-  /usr/lib/llvm-20/lib/clang/20/include/xmmintrin.h \
-  /usr/lib/llvm-20/lib/clang/20/include/mmintrin.h \
-  /usr/lib/llvm-20/lib/clang/20/include/mm_malloc.h \
-  /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/stdlib.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/random.tcc \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/numeric \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/stl_numeric.h \
