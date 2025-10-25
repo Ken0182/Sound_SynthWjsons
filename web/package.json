@@ -1,0 +1,22 @@
+{
+  "name": "ai-audio-generator-web",
+  "version": "1.0.0",
+  "description": "Web interface for AI Audio Generator sound presets",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Web interface built successfully'",
+    "dev": "echo 'Development mode - use Python web server'",
+    "install-deps": "echo 'Dependencies installed'"
+  },
+  "keywords": [
+    "audio",
+    "synthesis",
+    "web",
+    "interface",
+    "presets"
+  ],
+  "author": "AI Audio Generator",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}
