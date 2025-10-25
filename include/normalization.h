@@ -71,7 +71,7 @@ public:
             double targetLinear = dbToLinear(targetLevel);
             double gain = targetLinear / peak;
             
-            for (double& sample : buffer) {
+            for (float& sample : buffer) {
                 sample *= gain;
             }
         }
@@ -92,7 +92,7 @@ public:
             double targetLinear = dbToLinear(targetLevel);
             double gain = targetLinear / rms;
             
-            for (double& sample : buffer) {
+            for (float& sample : buffer) {
                 sample *= gain;
             }
         }
@@ -209,7 +209,7 @@ public:
     };
     
     // Create snapshot of current state
-    Snapshot createSnapshot(const NormalizedPreset& preset) const;
+    Snapshot createSnapshot(const PresetNormalizer::NormalizedPreset& preset) const;
     
     // Compare snapshots
     bool compareSnapshots(const Snapshot& a, const Snapshot& b, double tolerance = 1e-6) const;
@@ -235,24 +235,24 @@ class MusicalNormalizer {
 public:
     // Tempo-based time normalization
     static Seconds tempoToTime(double beats, FrequencyHz tempo) {
-        return Seconds{beats * 60.0 / tempo.value};
+        return Seconds{beats * 60.0 / tempo};
     }
     
     // Time to tempo-based beats
     static double timeToTempo(Seconds time, FrequencyHz tempo) {
-        return time.value * tempo.value / 60.0;
+        return time.value * tempo / 60.0;
     }
     
     // Musical division snapping
     static double snapToMusicalDivision(double time, FrequencyHz tempo, double division) {
-        double beatTime = 60.0 / tempo.value;
+        double beatTime = 60.0 / tempo;
         double divisionTime = beatTime / division;
         return std::round(time / divisionTime) * divisionTime;
     }
     
     // Key-aware pitch shifting
     static Hz shiftPitchInKey(Hz originalFreq, int semitones, int key, const std::string& scale) {
-        int midiNote = freqToMidi(originalFreq);
+        int midiNote = Normalizer::freqToMidi(originalFreq);
         int shiftedMidi = midiNote + semitones;
         
         // Ensure note is in key/scale

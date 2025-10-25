@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core_types.h"
+#include "dsp_ir.h"
 #include <map>
 #include <vector>
 #include <string>
@@ -117,6 +118,10 @@ private:
     void adjustForTempo(DSPGraph& graph, const MusicalContext& context) const;
     void adjustForKey(DSPGraph& graph, const MusicalContext& context) const;
     void adjustForScale(DSPGraph& graph, const MusicalContext& context) const;
+    
+    // Helper methods
+    bool validateConstraint(const PolicyConstraint& constraint, double value) const;
+    double computeViolationPenalty(const PolicyConstraint& constraint, double value) const;
 };
 
 // Policy manager
