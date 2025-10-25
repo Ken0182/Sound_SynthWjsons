@@ -14,10 +14,9 @@ add_library(aiaudio_core
 
 # Link libraries
 target_link_libraries(aiaudio_core
-    ${JSONCPP_LIBRARIES}
     yaml-cpp
-    pthread
-    m
+    Threads::Threads
+    ${MATH_LIB}
 )
 
 # Include directories
