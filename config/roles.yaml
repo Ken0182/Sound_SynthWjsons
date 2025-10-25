@@ -1,0 +1,349 @@
+# AI Audio Generator Roles and Policies Configuration
+
+# Pad role policy
+pad:
+  version: "1.0"
+  description: "Atmospheric pad sounds with slow attacks and long releases"
+  precedence: 1
+  
+  constraints:
+    frequency:
+      type: "range"
+      min: 100.0
+      max: 2000.0
+      weight: 1.0
+    amplitude:
+      type: "range"
+      min: 0.2
+      max: 0.8
+      weight: 1.0
+    attack:
+      type: "range"
+      min: 0.1
+      max: 2.0
+      weight: 0.8
+    decay:
+      type: "range"
+      min: 0.2
+      max: 3.0
+      weight: 0.8
+    sustain:
+      type: "range"
+      min: 0.3
+      max: 0.9
+      weight: 0.9
+    release:
+      type: "range"
+      min: 0.5
+      max: 5.0
+      weight: 0.8
+    waveType:
+      type: "enum"
+      options: ["sine", "saw", "square", "triangle"]
+      weight: 0.5
+  
+  priors:
+    frequency: 0.5
+    amplitude: 0.4
+    attack: 0.7
+    decay: 0.6
+    sustain: 0.7
+    release: 0.8
+  
+  penalties:
+    frequency: 0.1
+    amplitude: 0.1
+    attack: 0.2
+    decay: 0.2
+    sustain: 0.1
+    release: 0.2
+
+# Bass role policy
+bass:
+  version: "1.0"
+  description: "Low-frequency bass sounds with tight envelopes"
+  precedence: 2
+  
+  constraints:
+    frequency:
+      type: "range"
+      min: 20.0
+      max: 500.0
+      weight: 1.0
+    amplitude:
+      type: "range"
+      min: 0.4
+      max: 1.0
+      weight: 1.0
+    attack:
+      type: "range"
+      min: 0.001
+      max: 0.1
+      weight: 0.9
+    decay:
+      type: "range"
+      min: 0.01
+      max: 0.5
+      weight: 0.8
+    sustain:
+      type: "range"
+      min: 0.5
+      max: 1.0
+      weight: 0.9
+    release:
+      type: "range"
+      min: 0.1
+      max: 2.0
+      weight: 0.7
+    waveType:
+      type: "enum"
+      options: ["saw", "square", "triangle"]
+      weight: 0.6
+  
+  priors:
+    frequency: 0.2
+    amplitude: 0.8
+    attack: 0.1
+    decay: 0.3
+    sustain: 0.8
+    release: 0.4
+  
+  penalties:
+    frequency: 0.2
+    amplitude: 0.1
+    attack: 0.3
+    decay: 0.2
+    sustain: 0.1
+    release: 0.2
+
+# Lead role policy
+lead:
+  version: "1.0"
+  description: "Bright lead sounds with modulation capabilities"
+  precedence: 3
+  
+  constraints:
+    frequency:
+      type: "range"
+      min: 200.0
+      max: 4000.0
+      weight: 1.0
+    amplitude:
+      type: "range"
+      min: 0.5
+      max: 1.0
+      weight: 1.0
+    attack:
+      type: "range"
+      min: 0.01
+      max: 0.5
+      weight: 0.7
+    decay:
+      type: "range"
+      min: 0.05
+      max: 1.0
+      weight: 0.6
+    sustain:
+      type: "range"
+      min: 0.6
+      max: 1.0
+      weight: 0.8
+    release:
+      type: "range"
+      min: 0.2
+      max: 3.0
+      weight: 0.6
+    waveType:
+      type: "enum"
+      options: ["saw", "square", "triangle", "sine"]
+      weight: 0.4
+  
+  priors:
+    frequency: 0.7
+    amplitude: 0.9
+    attack: 0.3
+    decay: 0.5
+    sustain: 0.8
+    release: 0.6
+  
+  penalties:
+    frequency: 0.1
+    amplitude: 0.1
+    attack: 0.2
+    decay: 0.1
+    sustain: 0.1
+    release: 0.1
+
+# Drum role policy
+drum:
+  version: "1.0"
+  description: "Percussive drum sounds with sharp attacks"
+  precedence: 4
+  
+  constraints:
+    frequency:
+      type: "range"
+      min: 50.0
+      max: 8000.0
+      weight: 1.0
+    amplitude:
+      type: "range"
+      min: 0.5
+      max: 1.0
+      weight: 1.0
+    attack:
+      type: "range"
+      min: 0.001
+      max: 0.01
+      weight: 1.0
+    decay:
+      type: "range"
+      min: 0.01
+      max: 0.2
+      weight: 0.9
+    sustain:
+      type: "range"
+      min: 0.0
+      max: 0.3
+      weight: 0.8
+    release:
+      type: "range"
+      min: 0.01
+      max: 0.5
+      weight: 0.9
+    waveType:
+      type: "enum"
+      options: ["noise", "saw", "square"]
+      weight: 0.7
+  
+  priors:
+    frequency: 0.5
+    amplitude: 1.0
+    attack: 0.0
+    decay: 0.1
+    sustain: 0.1
+    release: 0.1
+  
+  penalties:
+    frequency: 0.1
+    amplitude: 0.1
+    attack: 0.5
+    decay: 0.3
+    sustain: 0.2
+    release: 0.3
+
+# Ambient role policy
+ambient:
+  version: "1.0"
+  description: "Atmospheric ambient sounds with long decays"
+  precedence: 5
+  
+  constraints:
+    frequency:
+      type: "range"
+      min: 80.0
+      max: 5000.0
+      weight: 0.8
+    amplitude:
+      type: "range"
+      min: 0.1
+      max: 0.6
+      weight: 0.9
+    attack:
+      type: "range"
+      min: 0.5
+      max: 5.0
+      weight: 0.7
+    decay:
+      type: "range"
+      min: 1.0
+      max: 10.0
+      weight: 0.8
+    sustain:
+      type: "range"
+      min: 0.2
+      max: 0.8
+      weight: 0.6
+    release:
+      type: "range"
+      min: 2.0
+      max: 15.0
+      weight: 0.9
+    waveType:
+      type: "enum"
+      options: ["sine", "saw", "triangle"]
+      weight: 0.3
+  
+  priors:
+    frequency: 0.6
+    amplitude: 0.3
+    attack: 0.8
+    decay: 0.9
+    sustain: 0.5
+    release: 0.9
+  
+  penalties:
+    frequency: 0.1
+    amplitude: 0.2
+    attack: 0.1
+    decay: 0.1
+    sustain: 0.1
+    release: 0.1
+
+# Texture role policy
+texture:
+  version: "1.0"
+  description: "Textural sounds for atmospheric enhancement"
+  precedence: 6
+  
+  constraints:
+    frequency:
+      type: "range"
+      min: 100.0
+      max: 10000.0
+      weight: 0.6
+    amplitude:
+      type: "range"
+      min: 0.05
+      max: 0.4
+      weight: 0.8
+    attack:
+      type: "range"
+      min: 0.1
+      max: 3.0
+      weight: 0.5
+    decay:
+      type: "range"
+      min: 0.5
+      max: 8.0
+      weight: 0.6
+    sustain:
+      type: "range"
+      min: 0.1
+      max: 0.7
+      weight: 0.4
+    release:
+      type: "range"
+      min: 1.0
+      max: 12.0
+      weight: 0.7
+    waveType:
+      type: "enum"
+      options: ["noise", "sine", "saw", "square", "triangle"]
+      weight: 0.2
+  
+  priors:
+    frequency: 0.5
+    amplitude: 0.2
+    attack: 0.6
+    decay: 0.7
+    sustain: 0.4
+    release: 0.8
+  
+  penalties:
+    frequency: 0.1
+    amplitude: 0.3
+    attack: 0.1
+    decay: 0.1
+    sustain: 0.1
+    release: 0.1
