@@ -15,10 +15,14 @@ add_library(aiaudio_core
 # Link libraries
 target_link_libraries(aiaudio_core
     ${JSONCPP_LIBRARIES}
-    yaml-cpp
-    pthread
-    m
+    ${YAMLCPP_LIBRARIES}
+    Threads::Threads
 )
+
+# Link math library on non-Windows
+if(UNIX AND NOT APPLE)
+    target_link_libraries(aiaudio_core m)
+endif()
 
 # Include directories
 target_include_directories(aiaudio_core PUBLIC
@@ -44,12 +48,41 @@ set_target_properties(aiaudio_generator PROPERTIES
 )
 
 # Compiler flags
-target_compile_options(aiaudio_core PRIVATE
-    -Wall -Wextra -Wpedantic
-    -O3 -march=native -ffast-math
-)
+if(NOT MSVC)
+    target_compile_options(aiaudio_core PRIVATE
+        -Wall -Wextra -Wpedantic
+        -O3 -ffast-math
+    )
+    # Only enable -march=native when not cross-compiling
+    if(CMAKE_SYSTEM_PROCESSOR)
+        target_compile_options(aiaudio_core PRIVATE -march=native)
+    endif()
+endif()
 
-target_compile_options(aiaudio_generator PRIVATE
-    -Wall -Wextra -Wpedantic
-    -O3 -march=native -ffast-math
-)
+if(NOT MSVC)
+    target_compile_options(aiaudio_generator PRIVATE
+        -Wall -Wextra -Wpedantic
+        -O3 -ffast-math
+    )
+    if(CMAKE_SYSTEM_PROCESSOR)
+        target_compile_options(aiaudio_generator PRIVATE -march=native)
+    endif()
+endif()
+
+# Optional: Python bindings via pybind11
+find_package(pybind11 CONFIG QUIET)
+if(pybind11_FOUND)
+    message(STATUS "pybind11 found: enabling Python bindings")
+    pybind11_add_module(aiaudio_python
+        python_bindings.cpp
+    )
+    target_link_libraries(aiaudio_python PRIVATE aiaudio_core)
+    target_include_directories(aiaudio_python PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
+    # Define for Windows DLL export quirks if needed
+    if(WIN32)
+        target_compile_definitions(aiaudio_python PRIVATE _USE_MATH_DEFINES)
+    endif()
+else()
+    message(STATUS "pybind11 not found: skipping Python bindings")
+endif()

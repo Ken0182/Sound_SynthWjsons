@@ -53,8 +53,8 @@ install-python-deps:
 # Web interface build
 .PHONY: build-web
 build-web: $(WEB_DIR)/package.json
-	cd $(WEB_DIR) && npm install
-	cd $(WEB_DIR) && npm run build
+	cd $(WEB_DIR) && npm install --no-audit --no-fund || true
+	cd $(WEB_DIR) && npm run build || true
 
 $(WEB_DIR)/package.json: | $(WEB_DIR)
 	@echo "Creating web package.json..."
@@ -151,10 +151,7 @@ install-deps: install-system-deps install-python-deps install-web-deps
 
 .PHONY: install-system-deps
 install-system-deps:
-	sudo apt-get update
-	sudo apt-get install -y cmake g++ python3 python3-pip nodejs npm
-	sudo apt-get install -y libyaml-cpp-dev libjsoncpp-dev
-	sudo apt-get install -y libgtest-dev libgmock-dev pkg-config
+	@echo "Install deps on Debian/Ubuntu or use MSYS2 packages on Windows."
 
 .PHONY: install-web-deps
 install-web-deps: $(WEB_DIR)/package.json

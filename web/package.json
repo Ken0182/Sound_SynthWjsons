@@ -4,9 +4,9 @@
   "description": "Web interface for AI Audio Generator sound presets",
   "main": "index.js",
   "scripts": {
-    "build": "echo 'Web interface built successfully'",
-    "dev": "echo 'Development mode - use Python web server'",
-    "install-deps": "echo 'Dependencies installed'"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "keywords": [
     "audio",
@@ -17,6 +17,12 @@
   ],
   "author": "AI Audio Generator",
   "license": "MIT",
-  "devDependencies": {},
-  "dependencies": {}
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "@vitejs/plugin-react": "^4.3.0"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
 }

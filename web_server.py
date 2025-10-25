@@ -16,6 +16,12 @@ import time
 
 # Import our audio interface
 from audio_interface import AudioInterface, AudioEngine
+import base64
+import numpy as np
+try:
+    import cpp_engine
+except Exception:
+    cpp_engine = None
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for web interface
@@ -106,8 +112,61 @@ def get_status():
         'status': 'ready',
         'engine': audio_interface.engine.value,
         'playing_sounds': playing_sounds,
-        'total_presets': len(audio_interface.presets)
+        'total_presets': len(audio_interface.presets),
+        'cpp_available': bool(cpp_engine and cpp_engine.is_available())
     })
+
+@app.route('/api/render', methods=['POST'])
+def render_audio():
+    """Render audio via C++ engine if available, else Python preview.
+    Request JSON: { prompt, role?, duration?, return_audio? }
+    """
+    if not audio_interface:
+        return jsonify({'error': 'Audio interface not initialized'}), 500
+
+    data = request.get_json() or {}
+    prompt = data.get('prompt')
+    role = data.get('role')
+    duration = float(data.get('duration', 2.0))
+    return_audio = bool(data.get('return_audio', False))
+
+    if not prompt:
+        return jsonify({'error': 'prompt is required'}), 400
+
+    # Try C++ engine first
+    used_cpp = False
+    audio = None
+    meta = {}
+    if cpp_engine and cpp_engine.is_available():
+        try:
+            result = cpp_engine.render_sync(prompt, role=role)
+            if result is not None:
+                audio, meta = result
+                used_cpp = True
+        except Exception as e:
+            meta = {'warning': f'CPP render failed: {e}'}
+
+    # Fallback to Python tone synthesis
+    if audio is None:
+        try:
+            audio = audio_interface.generate_audio_from_preset(prompt if prompt in audio_interface.presets else list(audio_interface.presets.keys())[0], duration)
+            meta.setdefault('fallback', True)
+        except Exception as e:
+            return jsonify({'error': f'Python render failed: {e}'}), 500
+
+    response = {
+        'used_cpp': used_cpp,
+        'sample_rate': getattr(audio_interface, 'sample_rate', 44100),
+        'num_samples': int(audio.shape[0]) if isinstance(audio, np.ndarray) else 0,
+        'meta': meta,
+    }
+
+    if return_audio and isinstance(audio, np.ndarray):
+        # Return base64-encoded float32 little-endian PCM
+        pcm_bytes = audio.astype(np.float32).tobytes()
+        response['audio_base64'] = base64.b64encode(pcm_bytes).decode('ascii')
+
+    return jsonify(response)
 
 @app.route('/api/categories')
 def get_categories():
