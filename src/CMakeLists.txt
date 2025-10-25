@@ -15,10 +15,18 @@ add_library(aiaudio_core
 # Link libraries
 target_link_libraries(aiaudio_core
     ${JSONCPP_LIBRARIES}
-    yaml-cpp
-    pthread
-    m
+    ${YAML_CPP_LIBRARIES}
 )
+
+# Add pthread for Unix-like systems
+if(UNIX)
+    target_link_libraries(aiaudio_core pthread m)
+endif()
+
+# Add yaml-cpp if found as a target
+if(TARGET yaml-cpp)
+    target_link_libraries(aiaudio_core yaml-cpp)
+endif()
 
 # Include directories
 target_include_directories(aiaudio_core PUBLIC
