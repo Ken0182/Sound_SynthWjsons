@@ -39,7 +39,22 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 $(BUILD_DIR)/$(PROJECT_NAME): $(BUILD_DIR)
+	@echo "Checking CMake cache..."
+	@if [ -f $(BUILD_DIR)/CMakeCache.txt ]; then \
+		CACHED_SOURCE=$$(grep CMAKE_HOME_DIRECTORY $(BUILD_DIR)/CMakeCache.txt | cut -d'=' -f2); \
+		CURRENT_SOURCE=$$(cd . && pwd); \
+		if [ "$$CACHED_SOURCE" != "$$CURRENT_SOURCE" ]; then \
+			echo "CMake cache is from a different directory. Cleaning..."; \
+			rm -rf $(BUILD_DIR)/*; \
+		fi; \
+	fi
 	cd $(BUILD_DIR) && $(CMAKE) .. && $(MAKE)
+
+# Force clean rebuild
+.PHONY: rebuild-cpp
+rebuild-cpp:
+	rm -rf $(BUILD_DIR)
+	$(MAKE) build-cpp
 
 # Python build and setup
 .PHONY: build-python
