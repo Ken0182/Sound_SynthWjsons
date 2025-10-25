@@ -5,7 +5,7 @@
 
 using namespace aiaudio;
 
-int main(int argc, char* argv[]) {
+int main(int /* argc */, char* /* argv */[]) {
     try {
         // Initialize the AI Audio Generator
         std::cout << "Initializing AI Audio Generator..." << std::endl;

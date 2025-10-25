@@ -76,7 +76,7 @@ void TruePeakLimiter::limitTruePeak(AudioBuffer& audio, double limitDb) {
     
     if (truePeak > limitLinear) {
         double gain = limitLinear / truePeak;
-        for (double& sample : audio) {
+        for (float& sample : audio) {
             sample *= gain;
         }
     }
@@ -106,7 +106,7 @@ void TruePeakLimiter::applySoftLimiter(AudioBuffer& audio, double threshold, dou
     double thresholdLinear = std::pow(10.0, threshold / 20.0);
     double ratioLinear = 1.0 / ratio;
     
-    for (double& sample : audio) {
+    for (float& sample : audio) {
         double absSample = std::abs(sample);
         if (absSample > thresholdLinear) {
             double excess = absSample - thresholdLinear;
@@ -125,7 +125,7 @@ void TruePeakLimiter::applySoftLimiter(AudioBuffer& audio, double threshold, dou
 void TruePeakLimiter::applyHardLimiter(AudioBuffer& audio, double limit) {
     double limitLinear = std::pow(10.0, limit / 20.0);
     
-    for (double& sample : audio) {
+    for (float& sample : audio) {
         if (sample > limitLinear) {
             sample = limitLinear;
         } else if (sample < -limitLinear) {
@@ -343,7 +343,7 @@ void HeadroomManager::adjustHeadroom(AudioBuffer& audio, double targetHeadroom) 
     double currentHeadroom = calculateHeadroom(audio);
     if (currentHeadroom < targetHeadroom) {
         double gain = std::pow(10.0, (currentHeadroom - targetHeadroom) / 20.0);
-        for (double& sample : audio) {
+        for (float& sample : audio) {
             sample *= gain;
         }
     }

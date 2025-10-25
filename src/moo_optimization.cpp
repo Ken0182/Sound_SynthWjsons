@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <numeric>
 #include <cmath>
+#include <queue>
 
 namespace aiaudio {
 
@@ -117,7 +118,7 @@ double MOOOptimizer::calculateHypervolume(const std::vector<ParetoPoint>& front)
     return hypervolume;
 }
 
-std::vector<MOOOptimizer::ParetoPoint> MOOOptimizer::epsilonConstraint(
+std::vector<ParetoPoint> MOOOptimizer::epsilonConstraint(
     const std::vector<ParetoPoint>& population,
     size_t primaryObjective,
     double epsilon) const {
@@ -145,7 +146,7 @@ std::vector<MOOOptimizer::ParetoPoint> MOOOptimizer::epsilonConstraint(
     return result;
 }
 
-std::vector<MOOOptimizer::ParetoPoint> MOOOptimizer::nsga2Selection(
+std::vector<ParetoPoint> MOOOptimizer::nsga2Selection(
     const std::vector<ParetoPoint>& population,
     size_t targetSize) const {
     

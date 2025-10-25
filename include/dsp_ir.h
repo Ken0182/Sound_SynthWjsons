@@ -3,6 +3,7 @@
 #include "core_types.h"
 #include <variant>
 #include <unordered_map>
+#include <unordered_set>
 #include <memory>
 #include <string>
 #include <vector>
@@ -11,13 +12,6 @@
 namespace aiaudio {
 
 // DSP Intermediate Representation (IR) System
-
-// Strong typing for units
-struct Hz { double value; };
-struct dB { double value; };
-struct Seconds { double value; };
-struct Percent { double value; };
-struct Ratio { double value; };
 
 // Ranged parameters with validation
 template<typename T>
@@ -41,8 +35,33 @@ private:
     void validate() {
         if (value < min || value > max) {
             throw AIAudioException("Parameter " + name + " out of range: " + 
-                                 std::to_string(value) + " not in [" + 
-                                 std::to_string(min) + ", " + std::to_string(max) + "]");
+                                 std::to_string(getValueForString()) + " not in [" + 
+                                 std::to_string(getMinForString()) + ", " + std::to_string(getMaxForString()) + "]");
+        }
+    }
+    
+private:
+    double getValueForString() const {
+        if constexpr (std::is_same_v<T, double>) {
+            return value;
+        } else {
+            return value.value;
+        }
+    }
+    
+    double getMinForString() const {
+        if constexpr (std::is_same_v<T, double>) {
+            return min;
+        } else {
+            return min.value;
+        }
+    }
+    
+    double getMaxForString() const {
+        if constexpr (std::is_same_v<T, double>) {
+            return max;
+        } else {
+            return max.value;
         }
     }
 };
@@ -93,9 +112,9 @@ public:
     std::string getDescription() const override;
     
 private:
-    RangedParam<Hz> frequency_{440.0, 20.0, 20000.0, "frequency"};
-    RangedParam<Percent> amplitude_{0.5, 0.0, 1.0, "amplitude"};
-    RangedParam<Percent> phase_{0.0, 0.0, 1.0, "phase"};
+    RangedParam<Hz> frequency_{Hz{440.0}, Hz{20.0}, Hz{20000.0}, "frequency"};
+    RangedParam<Percent> amplitude_{Percent{0.5}, Percent{0.0}, Percent{1.0}, "amplitude"};
+    RangedParam<Percent> phase_{Percent{0.0}, Percent{0.0}, Percent{1.0}, "phase"};
     std::string waveType_ = "sine";
     double phaseAccumulator_ = 0.0;
     double sampleRate_ = 44100.0;
@@ -113,8 +132,8 @@ public:
     std::string getDescription() const override;
     
 private:
-    RangedParam<Hz> cutoff_{1000.0, 20.0, 20000.0, "cutoff"};
-    RangedParam<Ratio> resonance_{0.1, 0.0, 0.99, "resonance"};
+    RangedParam<Hz> cutoff_{Hz{1000.0}, Hz{20.0}, Hz{20000.0}, "cutoff"};
+    RangedParam<Ratio> resonance_{Ratio{0.1}, Ratio{0.0}, Ratio{0.99}, "resonance"};
     std::string filterType_ = "lowpass";
     double x1_ = 0.0, x2_ = 0.0, y1_ = 0.0, y2_ = 0.0; // State variables
 };
@@ -131,10 +150,10 @@ public:
     std::string getDescription() const override;
     
 private:
-    RangedParam<Seconds> attack_{0.01, 0.001, 2.0, "attack"};
-    RangedParam<Seconds> decay_{0.1, 0.001, 2.0, "decay"};
-    RangedParam<Percent> sustain_{0.7, 0.0, 1.0, "sustain"};
-    RangedParam<Seconds> release_{0.5, 0.001, 5.0, "release"};
+    RangedParam<Seconds> attack_{Seconds{0.01}, Seconds{0.001}, Seconds{2.0}, "attack"};
+    RangedParam<Seconds> decay_{Seconds{0.1}, Seconds{0.001}, Seconds{2.0}, "decay"};
+    RangedParam<Percent> sustain_{Percent{0.7}, Percent{0.0}, Percent{1.0}, "sustain"};
+    RangedParam<Seconds> release_{Seconds{0.5}, Seconds{0.001}, Seconds{5.0}, "release"};
     
     enum class EnvState { ATTACK, DECAY, SUSTAIN, RELEASE, IDLE };
     EnvState state_ = EnvState::IDLE;
@@ -156,8 +175,8 @@ public:
     std::string getDescription() const override;
     
 private:
-    RangedParam<Hz> rate_{1.0, 0.01, 20.0, "rate"};
-    RangedParam<Percent> depth_{0.5, 0.0, 1.0, "depth"};
+    RangedParam<Hz> rate_{Hz{1.0}, Hz{0.01}, Hz{20.0}, "rate"};
+    RangedParam<Percent> depth_{Percent{0.5}, Percent{0.0}, Percent{1.0}, "depth"};
     std::string waveType_ = "sine";
     double phase_ = 0.0;
     double sampleRate_ = 44100.0;
@@ -177,6 +196,14 @@ class DSPGraph {
 public:
     DSPGraph() = default;
     ~DSPGraph() = default;
+    
+    // Disable copy operations due to unique_ptr members
+    DSPGraph(const DSPGraph&) = delete;
+    DSPGraph& operator=(const DSPGraph&) = delete;
+    
+    // Enable move operations
+    DSPGraph(DSPGraph&&) = default;
+    DSPGraph& operator=(DSPGraph&&) = default;
     
     // Graph construction
     void addStage(const std::string& name, std::unique_ptr<DSPStage> stage);

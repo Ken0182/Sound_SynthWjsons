@@ -14,6 +14,7 @@ namespace aiaudio {
 class SemanticEmbedding {
 public:
     using EmbeddingVector = std::vector<double>;
+    virtual ~SemanticEmbedding() = default;
     
     // Encode text to embedding vector
     virtual EmbeddingVector encode(const std::string& text) const = 0;
@@ -90,13 +91,13 @@ class TagSystem {
 public:
     struct Tag {
         std::string name;
-        EmbeddingVector embedding;
+        SemanticEmbedding::EmbeddingVector embedding;
         double weight = 1.0;
         std::string category;
     };
     
     // Add tag
-    void addTag(const std::string& name, const EmbeddingVector& embedding, 
+    void addTag(const std::string& name, const SemanticEmbedding::EmbeddingVector& embedding, 
                 const std::string& category = "", double weight = 1.0);
     
     // Get tag by name
@@ -123,8 +124,8 @@ private:
 class SemanticFusionEngine {
 public:
     struct FusionResult {
-        EmbeddingVector queryVector;
-        EmbeddingVector entryVector;
+        SemanticEmbedding::EmbeddingVector queryVector;
+        SemanticEmbedding::EmbeddingVector entryVector;
         double semanticScore;
         std::vector<std::string> contributingTags;
         std::vector<std::string> excludedTags;
@@ -135,28 +136,28 @@ public:
     explicit SemanticFusionEngine(std::unique_ptr<SemanticEmbedding> embedding);
     
     // Compose contrastive query vector
-    EmbeddingVector composeContrastive(const std::string& query,
+    SemanticEmbedding::EmbeddingVector composeContrastive(const std::string& query,
                                       const std::vector<std::string>& positiveTags,
                                       const std::vector<std::string>& negativeTags,
                                       double alpha = 0.3,
                                       double beta = 0.7) const;
     
     // Compute semantic score
-    double semanticScore(const EmbeddingVector& query, const EmbeddingVector& entry) const;
+    double semanticScore(const SemanticEmbedding::EmbeddingVector& query, const SemanticEmbedding::EmbeddingVector& entry) const;
     
     // Advanced scoring with learned weights
-    double semanticScoreWeighted(const EmbeddingVector& query, 
-                                const EmbeddingVector& entry,
+    double semanticScoreWeighted(const SemanticEmbedding::EmbeddingVector& query, 
+                                const SemanticEmbedding::EmbeddingVector& entry,
                                 const std::vector<double>& weights) const;
     
     // Process entry with tags and description
-    EmbeddingVector processEntry(const std::vector<std::string>& tags,
+    SemanticEmbedding::EmbeddingVector processEntry(const std::vector<std::string>& tags,
                                 const std::string& description,
                                 double delta = 0.5) const;
     
     // Get contributing tags for explanation
-    std::vector<std::string> getContributingTags(const EmbeddingVector& query,
-                                                const EmbeddingVector& entry,
+    std::vector<std::string> getContributingTags(const SemanticEmbedding::EmbeddingVector& query,
+                                                const SemanticEmbedding::EmbeddingVector& entry,
                                                 double threshold = 0.1) const;
     
     // Set learned weights for role-specific scoring
@@ -165,13 +166,16 @@ public:
     // Get role weights
     std::vector<double> getRoleWeights(Role role) const;
     
+    // Get embedding model (for internal use)
+    SemanticEmbedding* getEmbedding() const { return embedding_.get(); }
+    
 private:
     std::unique_ptr<SemanticEmbedding> embedding_;
     TagSystem tagSystem_;
     std::map<Role, std::vector<double>> roleWeights_;
     
     // Helper functions
-    EmbeddingVector averageEmbeddings(const std::vector<EmbeddingVector>& embeddings) const;
+    SemanticEmbedding::EmbeddingVector averageEmbeddings(const std::vector<SemanticEmbedding::EmbeddingVector>& embeddings) const;
     double computeIDF(const std::string& tag) const;
     std::vector<std::string> tokenize(const std::string& text) const;
 };
@@ -188,22 +192,22 @@ public:
     };
     
     // Build entry vector from data
-    EmbeddingVector buildEntryVector(const EntryData& data, 
+    SemanticEmbedding::EmbeddingVector buildEntryVector(const EntryData& data, 
                                     const SemanticFusionEngine& engine) const;
     
     // Add metadata to vector
-    EmbeddingVector addMetadata(const EmbeddingVector& baseVector,
+    SemanticEmbedding::EmbeddingVector addMetadata(const SemanticEmbedding::EmbeddingVector& baseVector,
                                const std::map<std::string, double>& metadata) const;
     
     // Apply role-specific weighting
-    EmbeddingVector applyRoleWeighting(const EmbeddingVector& vector, Role role) const;
+    SemanticEmbedding::EmbeddingVector applyRoleWeighting(const SemanticEmbedding::EmbeddingVector& vector, Role role) const;
     
 private:
     // Metadata encoding
-    EmbeddingVector encodeMetadata(const std::map<std::string, double>& metadata) const;
+    SemanticEmbedding::EmbeddingVector encodeMetadata(const std::map<std::string, double>& metadata) const;
     
     // Role-specific processing
-    EmbeddingVector processForRole(const EmbeddingVector& vector, Role role) const;
+    SemanticEmbedding::EmbeddingVector processForRole(const SemanticEmbedding::EmbeddingVector& vector, Role role) const;
 };
 
 // Semantic Search Engine
@@ -253,26 +257,26 @@ public:
 private:
     std::unique_ptr<SemanticFusionEngine> fusionEngine_;
     std::map<std::string, EntryVectorBuilder::EntryData> entries_;
-    std::map<std::string, EmbeddingVector> entryVectors_;
+    std::map<std::string, SemanticEmbedding::EmbeddingVector> entryVectors_;
     
     // Search helpers
     std::vector<SearchResult> rankResults(const std::vector<std::string>& entryIds,
-                                         const EmbeddingVector& queryVector,
+                                         const SemanticEmbedding::EmbeddingVector& queryVector,
                                          Role role) const;
     
     std::string generateExplanation(const SearchResult& result,
-                                   const EmbeddingVector& queryVector) const;
+                                    const SemanticEmbedding::EmbeddingVector& queryVector) const;
 };
 
 // Advanced Semantic Features
 class AdvancedSemanticFeatures {
 public:
     // Dimension-wise reweighting
-    static EmbeddingVector applyDimensionWeights(const EmbeddingVector& vector,
+    static SemanticEmbedding::EmbeddingVector applyDimensionWeights(const SemanticEmbedding::EmbeddingVector& vector,
                                                 const std::vector<double>& weights);
     
     // Learned diagonal matrix multiplication
-    static EmbeddingVector applyDiagonalMatrix(const EmbeddingVector& vector,
+    static SemanticEmbedding::EmbeddingVector applyDiagonalMatrix(const SemanticEmbedding::EmbeddingVector& vector,
                                               const std::vector<double>& diagonal);
     
     // Intersection-based scoring
@@ -315,7 +319,7 @@ public:
 private:
     // Test helpers
     bool checkMonotonicity(const std::vector<double>& scores) const;
-    double computeSemanticConsistency(const std::vector<EmbeddingVector>& vectors) const;
+    double computeSemanticConsistency(const std::vector<SemanticEmbedding::EmbeddingVector>& vectors) const;
 };
 
 } // namespace aiaudio

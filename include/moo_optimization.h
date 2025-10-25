@@ -7,15 +7,17 @@
 
 namespace aiaudio {
 
+// Pareto point definition (shared between classes)
+struct ParetoPoint {
+    ObjectiveVector objectives;
+    std::vector<double> parameters;
+    double hypervolume = 0.0;
+    bool dominated = false;
+};
+
 // Multi-Objective Optimization framework
 class MOOOptimizer {
 public:
-    struct ParetoPoint {
-        ObjectiveVector objectives;
-        std::vector<double> parameters;
-        double hypervolume = 0.0;
-        bool dominated = false;
-    };
     
     struct ConstraintViolation {
         std::string constraint;

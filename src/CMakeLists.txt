@@ -2,7 +2,7 @@
 
 # Create the main library
 add_library(aiaudio_core
-    core_types.cpp
+    audio_safety.cpp
     moo_optimization.cpp
     dsp_ir.cpp
     normalization.cpp
@@ -14,8 +14,8 @@ add_library(aiaudio_core
 
 # Link libraries
 target_link_libraries(aiaudio_core
-    ${OpenCV_LIBS}
-    nlohmann_json::nlohmann_json
+    ${JSONCPP_LIBRARIES}
+    yaml-cpp
     pthread
     m
 )
@@ -23,6 +23,7 @@ target_link_libraries(aiaudio_core
 # Include directories
 target_include_directories(aiaudio_core PUBLIC
     ${CMAKE_SOURCE_DIR}/include
+    ${JSONCPP_INCLUDE_DIRS}
 )
 
 # Create the main executable
@@ -33,12 +34,12 @@ target_link_libraries(aiaudio_generator aiaudio_core)
 
 # Set C++ standard
 set_target_properties(aiaudio_core PROPERTIES
-    CXX_STANDARD 20
+    CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
 )
 
 set_target_properties(aiaudio_generator PROPERTIES
-    CXX_STANDARD 20
+    CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
 )
 
