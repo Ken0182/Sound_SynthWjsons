@@ -1,0 +1,296 @@
+{
+  "version": "1.0",
+  "description": "Quality scoring weights for MOO optimization across different roles and contexts",
+  
+  "global_weights": {
+    "semantic_match": 0.25,
+    "mix_readiness": 0.20,
+    "perceptual_quality": 0.30,
+    "stability": 0.20,
+    "preference_win": 0.05
+  },
+  
+  "role_specific_weights": {
+    "pad": {
+      "semantic_match": 0.30,
+      "mix_readiness": 0.15,
+      "perceptual_quality": 0.35,
+      "stability": 0.15,
+      "preference_win": 0.05,
+      "description": "Pads prioritize perceptual quality and semantic match over mix readiness"
+    },
+    "bass": {
+      "semantic_match": 0.20,
+      "mix_readiness": 0.30,
+      "perceptual_quality": 0.25,
+      "stability": 0.20,
+      "preference_win": 0.05,
+      "description": "Bass prioritizes mix readiness and stability for clean low-end"
+    },
+    "lead": {
+      "semantic_match": 0.25,
+      "mix_readiness": 0.20,
+      "perceptual_quality": 0.35,
+      "stability": 0.15,
+      "preference_win": 0.05,
+      "description": "Leads prioritize perceptual quality and semantic match for expressiveness"
+    },
+    "drum": {
+      "semantic_match": 0.15,
+      "mix_readiness": 0.25,
+      "perceptual_quality": 0.25,
+      "stability": 0.30,
+      "preference_win": 0.05,
+      "description": "Drums prioritize stability and mix readiness for tight rhythm"
+    },
+    "fx": {
+      "semantic_match": 0.35,
+      "mix_readiness": 0.10,
+      "perceptual_quality": 0.30,
+      "stability": 0.20,
+      "preference_win": 0.05,
+      "description": "FX prioritize semantic match and perceptual uniqueness"
+    }
+  },
+  
+  "quality_thresholds": {
+    "excellent": {
+      "min_score": 0.85,
+      "description": "Excellent quality - production ready"
+    },
+    "good": {
+      "min_score": 0.70,
+      "description": "Good quality - usable with minor tweaks"
+    },
+    "acceptable": {
+      "min_score": 0.55,
+      "description": "Acceptable quality - needs improvement"
+    },
+    "poor": {
+      "min_score": 0.0,
+      "max_score": 0.55,
+      "description": "Poor quality - requires major rework"
+    }
+  },
+  
+  "metric_definitions": {
+    "semantic_match": {
+      "description": "How well the audio matches the semantic prompt/description",
+      "range": [0.0, 1.0],
+      "optimal": 1.0,
+      "computation": "cosine_similarity(audio_embedding, prompt_embedding)",
+      "weights": {
+        "text_description": 0.6,
+        "tag_match": 0.3,
+        "role_consistency": 0.1
+      }
+    },
+    "mix_readiness": {
+      "description": "How well the audio fits in a mix (frequency balance, dynamics, headroom)",
+      "range": [0.0, 1.0],
+      "optimal": 1.0,
+      "computation": "weighted_sum(lufs, true_peak, frequency_balance, dynamic_range)",
+      "weights": {
+        "lufs_target": 0.30,
+        "true_peak_limit": 0.25,
+        "frequency_balance": 0.25,
+        "dynamic_range": 0.20
+      },
+      "targets": {
+        "lufs": -18.0,
+        "true_peak": -1.0,
+        "dynamic_range_db": 12.0
+      }
+    },
+    "perceptual_quality": {
+      "description": "Overall perceptual audio quality (clarity, richness, artifacts)",
+      "range": [0.0, 1.0],
+      "optimal": 1.0,
+      "computation": "weighted_sum(clarity, richness, artifact_penalty)",
+      "weights": {
+        "spectral_clarity": 0.35,
+        "harmonic_richness": 0.30,
+        "temporal_smoothness": 0.20,
+        "artifact_penalty": 0.15
+      }
+    },
+    "stability": {
+      "description": "Audio stability (no clipping, NaN, DC offset, or runaway feedback)",
+      "range": [0.0, 1.0],
+      "optimal": 1.0,
+      "computation": "1.0 - penalty_sum(clipping, nan, dc_offset, instability)",
+      "penalties": {
+        "clipping": 0.5,
+        "nan_detected": 1.0,
+        "dc_offset": 0.2,
+        "feedback_instability": 0.8
+      }
+    },
+    "preference_win": {
+      "description": "Human preference from A/B testing (if available)",
+      "range": [0.0, 1.0],
+      "optimal": 1.0,
+      "computation": "wins / (wins + losses)",
+      "fallback": 0.5
+    }
+  },
+  
+  "constraint_violations": {
+    "hard_constraints": {
+      "clipping": {
+        "threshold": 1.0,
+        "penalty": 0.8,
+        "description": "Samples exceeding ±1.0"
+      },
+      "nan_or_inf": {
+        "penalty": 1.0,
+        "description": "NaN or Inf values detected"
+      },
+      "silence": {
+        "threshold": 0.001,
+        "penalty": 0.9,
+        "description": "RMS below threshold (essentially silent)"
+      },
+      "max_latency_exceeded": {
+        "penalty": 0.5,
+        "description": "Rendering exceeded max latency constraint"
+      }
+    },
+    "soft_constraints": {
+      "lufs_deviation": {
+        "target": -18.0,
+        "tolerance": 3.0,
+        "penalty_per_db": 0.05,
+        "description": "LUFS deviation from target"
+      },
+      "true_peak_exceeded": {
+        "limit": -1.0,
+        "penalty_per_db": 0.1,
+        "description": "True peak exceeds limit"
+      },
+      "dc_offset": {
+        "threshold": 0.01,
+        "penalty": 0.1,
+        "description": "DC offset detected"
+      },
+      "frequency_imbalance": {
+        "threshold": 0.7,
+        "penalty": 0.15,
+        "description": "Poor frequency distribution"
+      }
+    }
+  },
+  
+  "normalization": {
+    "method": "min_max",
+    "scale": [0.0, 1.0],
+    "clip": true,
+    "description": "Normalize all metrics to [0, 1] range"
+  },
+  
+  "aggregation": {
+    "method": "weighted_sum",
+    "alternative_methods": ["geometric_mean", "harmonic_mean", "pareto_dominance"],
+    "description": "Combine individual metrics into overall score"
+  },
+  
+  "context_modifiers": {
+    "tempo_based": {
+      "slow": {
+        "range": [0, 90],
+        "stability_weight_multiplier": 1.2,
+        "description": "Slow tempos require more stability"
+      },
+      "medium": {
+        "range": [90, 140],
+        "weight_multiplier": 1.0,
+        "description": "No modification for medium tempos"
+      },
+      "fast": {
+        "range": [140, 300],
+        "perceptual_quality_weight_multiplier": 1.1,
+        "description": "Fast tempos prioritize perceptual clarity"
+      }
+    },
+    "key_based": {
+      "major": {
+        "semantic_match_weight_multiplier": 1.0,
+        "description": "No modification for major keys"
+      },
+      "minor": {
+        "semantic_match_weight_multiplier": 1.05,
+        "description": "Slightly increase semantic importance for minor keys"
+      }
+    }
+  },
+  
+  "budget_tiers": {
+    "S": {
+      "description": "Premium tier - highest quality",
+      "quality_threshold": 0.85,
+      "max_cpu": 1.0,
+      "max_latency": 50.0,
+      "features": ["all_optimizations", "high_quality_resampling", "dithering"]
+    },
+    "A": {
+      "description": "High tier - excellent quality",
+      "quality_threshold": 0.75,
+      "max_cpu": 0.8,
+      "max_latency": 20.0,
+      "features": ["most_optimizations", "standard_resampling"]
+    },
+    "B": {
+      "description": "Standard tier - good quality",
+      "quality_threshold": 0.65,
+      "max_cpu": 0.6,
+      "max_latency": 10.0,
+      "features": ["basic_optimizations"]
+    },
+    "C": {
+      "description": "Economy tier - acceptable quality",
+      "quality_threshold": 0.55,
+      "max_cpu": 0.4,
+      "max_latency": 5.0,
+      "features": ["minimal_processing"]
+    }
+  },
+  
+  "a_b_testing": {
+    "enabled": true,
+    "sample_rate": 0.1,
+    "description": "10% of generations participate in A/B testing",
+    "bandit_algorithm": "thompson_sampling",
+    "exploration_factor": 0.2
+  },
+  
+  "feedback_collection": {
+    "enabled": true,
+    "channels": ["explicit_rating", "playback_duration", "regeneration_count"],
+    "implicit_signals": {
+      "playback_completion": {
+        "weight": 0.3,
+        "description": "Did user listen to full audio?"
+      },
+      "quick_skip": {
+        "weight": -0.5,
+        "description": "User skipped within 1 second"
+      },
+      "regeneration": {
+        "weight": -0.3,
+        "description": "User regenerated same prompt"
+      },
+      "download": {
+        "weight": 0.8,
+        "description": "User downloaded audio"
+      }
+    }
+  },
+  
+  "continual_learning": {
+    "enabled": false,
+    "update_frequency": "weekly",
+    "trust_region_size": 0.05,
+    "min_samples_for_update": 1000,
+    "description": "Update weights based on user feedback"
+  }
+}

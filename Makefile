@@ -1,12 +1,44 @@
-# AI Audio Generator - Comprehensive Build System
-# Supports both C++ audio engine and Python web interface
+# AI Audio Generator - Cross-Platform Build System
+# Supports Linux, macOS, and MSYS2/Windows
+
+# Detect operating system
+ifeq ($(OS),Windows_NT)
+    # Windows/MSYS2 detection
+    ifeq ($(shell uname -o 2>/dev/null),Msys)
+        PLATFORM := msys2
+        CMAKE_PRESET := msys2-mingw64
+        PYTHON := python
+        MAKE_PROGRAM := mingw32-make
+        NPROC := $(shell nproc)
+    else
+        PLATFORM := windows
+        CMAKE_PRESET := default
+        PYTHON := python
+        MAKE_PROGRAM := make
+        NPROC := 4
+    endif
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+        PLATFORM := linux
+        CMAKE_PRESET := linux-gcc
+        PYTHON := python3
+        MAKE_PROGRAM := make
+        NPROC := $(shell nproc)
+    endif
+    ifeq ($(UNAME_S),Darwin)
+        PLATFORM := macos
+        CMAKE_PRESET := macos
+        PYTHON := python3
+        MAKE_PROGRAM := make
+        NPROC := $(shell sysctl -n hw.ncpu)
+    endif
+endif
 
 # Project configuration
 PROJECT_NAME = aiaudio_generator
 CXX = g++
-PYTHON = python3
 CMAKE = cmake
-MAKE = make
 
 # Directories
 BUILD_DIR = build
@@ -16,10 +48,18 @@ WEB_DIR = web
 DIST_DIR = dist
 
 # Compiler flags
-CXXFLAGS = -std=c++17 -O3 -march=native -ffast-math -Wall -Wextra
+CXXFLAGS = -std=c++17 -O3 -Wall -Wextra
+ifeq ($(PLATFORM),msys2)
+    # MSYS2 specific flags
+    LIBS = -ljsoncpp -lyaml-cpp
+else
+    # Linux/macOS flags
+    CXXFLAGS += -march=native -ffast-math
+    LIBS = -ljsoncpp -lyaml-cpp -lpthread -lm
+endif
+
 DEBUG_FLAGS = -g -O0 -DDEBUG
-INCLUDES = -I$(INCLUDE_DIR) -I/usr/include/opencv4
-LIBS = -ljsoncpp -lyaml-cpp -lpthread -lm
+INCLUDES = -I$(INCLUDE_DIR)
 
 # Python dependencies
 PYTHON_DEPS = requirements.txt
@@ -39,7 +79,13 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 $(BUILD_DIR)/$(PROJECT_NAME): $(BUILD_DIR)
-	cd $(BUILD_DIR) && $(CMAKE) .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON && $(MAKE)
+ifeq ($(PLATFORM),msys2)
+	@echo "Building for MSYS2/MinGW64"
+	cd $(BUILD_DIR) && $(CMAKE) -G "MinGW Makefiles" .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON && $(MAKE_PROGRAM)
+else
+	@echo "Building for $(PLATFORM)"
+	cd $(BUILD_DIR) && $(CMAKE) .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON && $(MAKE_PROGRAM) -j$(NPROC)
+endif
 
 # Python build and setup
 .PHONY: build-python
@@ -47,8 +93,8 @@ build-python: install-python-deps
 
 .PHONY: install-python-deps
 install-python-deps:
-	pip3 install --upgrade pip
-	pip3 install -r $(PYTHON_DEPS)
+	$(PYTHON) -m pip install --upgrade pip
+	$(PYTHON) -m pip install -r $(PYTHON_DEPS)
 
 # Web interface build
 .PHONY: build-web
@@ -151,10 +197,19 @@ install-deps: install-system-deps install-python-deps install-web-deps
 
 .PHONY: install-system-deps
 install-system-deps:
+ifeq ($(PLATFORM),msys2)
+	@echo "Installing dependencies for MSYS2..."
+	pacman -S --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-yaml-cpp mingw-w64-x86_64-jsoncpp mingw-w64-x86_64-python mingw-w64-x86_64-pybind11
+else ifeq ($(PLATFORM),macos)
+	@echo "Installing dependencies for macOS..."
+	brew install cmake yaml-cpp jsoncpp python pybind11 node
+else
+	@echo "Installing dependencies for Linux..."
 	sudo apt-get update
 	sudo apt-get install -y cmake g++ python3 python3-pip nodejs npm
-	sudo apt-get install -y libyaml-cpp-dev libjsoncpp-dev
+	sudo apt-get install -y libyaml-cpp-dev libjsoncpp-dev pybind11-dev
 	sudo apt-get install -y libgtest-dev libgmock-dev pkg-config
+endif
 
 .PHONY: install-web-deps
 install-web-deps: $(WEB_DIR)/package.json
@@ -163,7 +218,12 @@ install-web-deps: $(WEB_DIR)/package.json
 # Help target
 .PHONY: help
 help:
-	@echo "AI Audio Generator - Available Targets:"
+	@echo "AI Audio Generator - Cross-Platform Build System"
+	@echo "================================================"
+	@echo ""
+	@echo "Detected platform: $(PLATFORM)"
+	@echo "CMake preset: $(CMAKE_PRESET)"
+	@echo "Python: $(PYTHON)"
 	@echo ""
 	@echo "Build Targets:"
 	@echo "  all          - Build everything (C++, Python, Web)"

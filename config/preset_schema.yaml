@@ -1,0 +1,524 @@
+# Preset Schema Definition
+# Defines the canonical structure for audio presets shared between Python and C++
+# Version: 1.0
+
+schema_version: "1.0"
+description: "Canonical preset schema for Python-C++ integration"
+
+# Top-level preset structure
+preset:
+  name:
+    type: string
+    required: true
+    description: "Human-readable preset name"
+    examples: ["Warm Pad", "Deep Bass", "Bright Lead"]
+  
+  role:
+    type: enum
+    required: true
+    description: "Preset role/category"
+    values: ["pad", "bass", "lead", "drum", "fx", "unknown"]
+    mapping:
+      python: "role"
+      cpp: "Role"
+  
+  description:
+    type: string
+    required: false
+    description: "Detailed preset description (used as semantic prompt)"
+    examples: ["Warm atmospheric pad with lush reverb"]
+  
+  tags:
+    type: array
+    item_type: string
+    required: false
+    description: "Tags for semantic search"
+    examples: [["warm", "atmospheric", "reverb"], ["aggressive", "distorted"]]
+  
+  version:
+    type: string
+    required: false
+    default: "1.0"
+    description: "Preset version"
+  
+  metadata:
+    type: object
+    required: false
+    description: "Additional metadata"
+    properties:
+      author:
+        type: string
+        description: "Preset author"
+      created:
+        type: datetime
+        description: "Creation timestamp (ISO 8601)"
+      modified:
+        type: datetime
+        description: "Last modification timestamp (ISO 8601)"
+      quality_score:
+        type: float
+        range: [0.0, 1.0]
+        description: "Pre-computed quality score"
+      budget_tier:
+        type: enum
+        values: ["S", "A", "B", "C"]
+        description: "Performance budget tier"
+
+# DSP stage definitions
+stages:
+  type: array
+  required: true
+  description: "DSP processing stages (graph nodes)"
+  item_schema:
+    id:
+      type: string
+      required: true
+      description: "Unique stage identifier"
+      pattern: "^[a-zA-Z][a-zA-Z0-9_]*$"
+      examples: ["osc1", "env1", "filter1", "lfo1"]
+    
+    type:
+      type: enum
+      required: true
+      description: "Stage type"
+      values:
+        - oscillator
+        - envelope
+        - filter
+        - lfo
+        - delay
+        - reverb
+        - distortion
+        - compressor
+        - eq
+        - mixer
+        - gain
+    
+    parameters:
+      type: object
+      required: true
+      description: "Stage-specific parameters"
+
+# Stage-specific parameter schemas
+stage_parameters:
+  oscillator:
+    frequency:
+      type: float
+      unit: Hz
+      range: [20.0, 20000.0]
+      default: 440.0
+      description: "Oscillator frequency"
+      python_field: "frequency"
+      cpp_field: "frequency"
+    
+    amplitude:
+      type: float
+      unit: linear
+      range: [0.0, 1.0]
+      default: 0.5
+      description: "Oscillator amplitude"
+    
+    waveform:
+      type: enum
+      values: ["sine", "square", "saw", "triangle", "noise"]
+      default: "sine"
+      description: "Waveform type"
+    
+    phase:
+      type: float
+      unit: radians
+      range: [0.0, 6.283185307179586]  # 2*pi
+      default: 0.0
+      description: "Initial phase offset"
+    
+    detune:
+      type: float
+      unit: cents
+      range: [-100.0, 100.0]
+      default: 0.0
+      description: "Detuning in cents"
+  
+  envelope:
+    attack:
+      type: float
+      unit: seconds
+      range: [0.0, 10.0]
+      default: 0.1
+      description: "Attack time"
+      python_field: "attack"
+      cpp_field: "attack"
+    
+    decay:
+      type: float
+      unit: seconds
+      range: [0.0, 10.0]
+      default: 0.2
+      description: "Decay time"
+    
+    sustain:
+      type: float
+      unit: linear
+      range: [0.0, 1.0]
+      default: 0.7
+      description: "Sustain level"
+    
+    release:
+      type: float
+      unit: seconds
+      range: [0.0, 10.0]
+      default: 0.5
+      description: "Release time"
+    
+    curve:
+      type: enum
+      values: ["linear", "exponential", "logarithmic"]
+      default: "exponential"
+      description: "Envelope curve type"
+  
+  filter:
+    cutoff:
+      type: float
+      unit: Hz
+      range: [20.0, 20000.0]
+      default: 1000.0
+      description: "Filter cutoff frequency"
+      python_field: "cutoff"
+      cpp_field: "cutoff"
+    
+    resonance:
+      type: float
+      unit: linear
+      range: [0.0, 1.0]
+      default: 0.3
+      description: "Filter resonance (Q)"
+    
+    filter_type:
+      type: enum
+      values: ["lowpass", "highpass", "bandpass", "notch", "allpass"]
+      default: "lowpass"
+      description: "Filter type"
+    
+    slope:
+      type: enum
+      values: [12, 24, 48]
+      default: 24
+      unit: dB/octave
+      description: "Filter slope"
+  
+  lfo:
+    rate:
+      type: float
+      unit: Hz
+      range: [0.01, 100.0]
+      default: 1.0
+      description: "LFO rate"
+    
+    depth:
+      type: float
+      unit: linear
+      range: [0.0, 1.0]
+      default: 0.5
+      description: "LFO modulation depth"
+    
+    waveform:
+      type: enum
+      values: ["sine", "square", "saw", "triangle", "random"]
+      default: "sine"
+      description: "LFO waveform"
+    
+    sync:
+      type: boolean
+      default: false
+      description: "Sync to tempo"
+    
+    tempo_division:
+      type: enum
+      values: ["1/16", "1/8", "1/4", "1/2", "1", "2", "4"]
+      default: "1/4"
+      description: "Tempo sync division"
+  
+  delay:
+    time:
+      type: float
+      unit: seconds
+      range: [0.0, 5.0]
+      default: 0.5
+      description: "Delay time"
+    
+    feedback:
+      type: float
+      unit: linear
+      range: [0.0, 0.95]
+      default: 0.3
+      description: "Delay feedback amount"
+    
+    mix:
+      type: float
+      unit: linear
+      range: [0.0, 1.0]
+      default: 0.3
+      description: "Dry/wet mix"
+    
+    sync:
+      type: boolean
+      default: false
+      description: "Sync to tempo"
+  
+  reverb:
+    size:
+      type: float
+      unit: linear
+      range: [0.0, 1.0]
+      default: 0.5
+      description: "Room size"
+    
+    damping:
+      type: float
+      unit: linear
+      range: [0.0, 1.0]
+      default: 0.5
+      description: "High frequency damping"
+    
+    mix:
+      type: float
+      unit: linear
+      range: [0.0, 1.0]
+      default: 0.3
+      description: "Dry/wet mix"
+    
+    pre_delay:
+      type: float
+      unit: seconds
+      range: [0.0, 0.5]
+      default: 0.0
+      description: "Pre-delay time"
+
+# Graph connections
+connections:
+  type: array
+  required: true
+  description: "DSP graph connections (edges)"
+  item_schema:
+    from:
+      type: string
+      required: true
+      description: "Source stage ID"
+      examples: ["osc1", "env1"]
+    
+    to:
+      type: string
+      required: true
+      description: "Destination stage ID"
+      examples: ["env1", "filter1"]
+    
+    type:
+      type: enum
+      required: false
+      default: "audio"
+      values: ["audio", "modulation", "sidechain"]
+      description: "Connection type"
+    
+    weight:
+      type: float
+      required: false
+      default: 1.0
+      range: [0.0, 1.0]
+      description: "Connection weight/gain"
+
+# Musical context
+context:
+  tempo:
+    type: float
+    unit: BPM
+    range: [20.0, 300.0]
+    default: 120.0
+    description: "Tempo in beats per minute"
+    python_field: "tempo"
+    cpp_field: "tempo"
+  
+  key:
+    type: integer
+    range: [0, 11]
+    default: 0
+    description: "Musical key (0=C, 1=C#, ..., 11=B)"
+    mapping:
+      0: C
+      1: C#
+      2: D
+      3: D#
+      4: E
+      5: F
+      6: F#
+      7: G
+      8: G#
+      9: A
+      10: A#
+      11: B
+  
+  scale:
+    type: enum
+    values: ["major", "minor", "dorian", "phrygian", "lydian", "mixolydian", "locrian"]
+    default: "major"
+    description: "Musical scale"
+  
+  time_signature:
+    type: array
+    item_type: integer
+    length: 2
+    default: [4, 4]
+    description: "Time signature [numerator, denominator]"
+    examples: [[4, 4], [3, 4], [6, 8]]
+
+# Rendering constraints
+constraints:
+  max_cpu:
+    type: float
+    unit: fraction
+    range: [0.0, 1.0]
+    default: 0.8
+    description: "Maximum CPU usage (0-1)"
+    python_field: "max_cpu"
+    cpp_field: "maxCPU"
+  
+  max_latency:
+    type: float
+    unit: milliseconds
+    range: [0.1, 100.0]
+    default: 10.0
+    description: "Maximum rendering latency"
+    python_field: "max_latency"
+    cpp_field: "maxLatency"
+  
+  lufs_target:
+    type: float
+    unit: LUFS
+    range: [-30.0, 0.0]
+    default: -18.0
+    description: "Target LUFS level"
+    python_field: "lufs_target"
+    cpp_field: "lufsTarget"
+  
+  true_peak_limit:
+    type: float
+    unit: dBTP
+    range: [-10.0, 0.0]
+    default: -1.0
+    description: "True peak limit"
+    python_field: "true_peak_limit"
+    cpp_field: "truePeakLimit"
+
+# Quality metrics
+quality:
+  overall_score:
+    type: float
+    range: [0.0, 1.0]
+    description: "Overall quality score"
+    python_field: "overall_score"
+    cpp_field: "overallScore"
+  
+  semantic_match:
+    type: float
+    range: [0.0, 1.0]
+    description: "Semantic match to prompt"
+    python_field: "semantic_match"
+    cpp_field: "semMatch"
+  
+  mix_readiness:
+    type: float
+    range: [0.0, 1.0]
+    description: "Mix readiness score"
+    python_field: "mix_readiness"
+    cpp_field: "mixReadiness"
+  
+  perceptual_quality:
+    type: float
+    range: [0.0, 1.0]
+    description: "Perceptual quality score"
+    python_field: "perceptual_quality"
+    cpp_field: "perceptualQuality"
+  
+  stability:
+    type: float
+    range: [0.0, 1.0]
+    description: "Audio stability score"
+    python_field: "stability"
+    cpp_field: "stability"
+
+# Validation rules
+validation:
+  required_fields: ["name", "role", "stages", "connections"]
+  min_stages: 1
+  max_stages: 32
+  max_connections: 128
+  max_preset_size_kb: 1024
+  
+  stage_validation:
+    - rule: "All stage IDs must be unique"
+    - rule: "Stage types must be valid"
+    - rule: "Parameters must match stage type"
+  
+  connection_validation:
+    - rule: "Source and destination stages must exist"
+    - rule: "No circular dependencies allowed (DAG)"
+    - rule: "Connection weights must be in range [0, 1]"
+  
+  parameter_validation:
+    - rule: "All parameters must have valid types"
+    - rule: "Numeric parameters must be in valid ranges"
+    - rule: "Enum parameters must have valid values"
+
+# Example presets
+examples:
+  - name: "Simple Sine Pad"
+    role: "pad"
+    description: "Simple sine wave pad"
+    stages:
+      - id: "osc1"
+        type: "oscillator"
+        parameters:
+          frequency: 440.0
+          amplitude: 0.5
+          waveform: "sine"
+      - id: "env1"
+        type: "envelope"
+        parameters:
+          attack: 0.2
+          decay: 0.5
+          sustain: 0.7
+          release: 2.0
+    connections:
+      - from: "osc1"
+        to: "env1"
+        weight: 1.0
+  
+  - name: "Filtered Bass"
+    role: "bass"
+    description: "Filtered sawtooth bass"
+    stages:
+      - id: "osc1"
+        type: "oscillator"
+        parameters:
+          frequency: 100.0
+          amplitude: 0.8
+          waveform: "saw"
+      - id: "filter1"
+        type: "filter"
+        parameters:
+          cutoff: 200.0
+          resonance: 0.5
+          filter_type: "lowpass"
+          slope: 24
+      - id: "env1"
+        type: "envelope"
+        parameters:
+          attack: 0.01
+          decay: 0.1
+          sustain: 0.8
+          release: 0.3
+    connections:
+      - from: "osc1"
+        to: "filter1"
+        weight: 1.0
+      - from: "filter1"
+        to: "env1"
+        weight: 1.0
