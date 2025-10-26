@@ -38,7 +38,13 @@ cpp_engine: Optional['CPPAudioEngineAdapter'] = None
 @app.route('/')
 def index():
     """Serve the main web interface"""
-    return render_template('index.html')
+    # Check if React app is built
+    react_index = os.path.join('static', 'index.html')
+    if os.path.exists(react_index):
+        return send_from_directory('static', 'index.html')
+    else:
+        # Fallback to Flask template
+        return render_template('index.html')
 
 @app.route('/api/presets')
 def get_presets():
@@ -157,91 +163,10 @@ def get_preset_parameters(preset_name: str):
         'parameters': info['parameters']
     })
 
-@app.route('/api/render', methods=['POST'])
-def render_audio():
-    """Render audio using the C++ engine"""
-    if not cpp_engine:
-        return jsonify({'error': 'C++ engine not available'}), 500
-    
-    try:
-        data = request.json
-        preset = data.get('preset', {})
-        context = data.get('context', {
-            "tempo": 120.0,
-            "key": 0,
-            "scale": "major",
-            "time_signature": [4, 4]
-        })
-        duration = data.get('duration', 2.0)
-        
-        # Render audio using C++ engine
-        audio = cpp_engine.render_audio(preset, context, duration)
-        
-        # Convert to list for JSON serialization
-        audio_list = audio.tolist()
-        
-        # Assess quality
-        role = preset.get('role', preset.get('category', 'unknown'))
-        quality = cpp_engine.assess_quality(audio, role, context)
-        
-        return jsonify({
-            'audio': audio_list,
-            'sample_rate': 44100,
-            'channels': 2,
-            'duration': duration,
-            'quality': quality
-        })
-    
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-@app.route('/api/engine/status')
-def get_engine_status():
-    """Get C++ engine status"""
-    if not cpp_engine:
-        return jsonify({
-            'available': False,
-            'engine': 'python_fallback'
-        })
-    
-    try:
-        status = cpp_engine.get_status()
-        status['available'] = True
-        return jsonify(status)
-    except Exception as e:
-        return jsonify({
-            'error': str(e),
-            'available': False
-        }), 500
-
-@app.route('/api/quality/<preset_name>', methods=['GET'])
-def get_preset_quality(preset_name: str):
-    """Get quality metrics for a preset"""
-    if not audio_interface or not cpp_engine:
-        return jsonify({'error': 'Services not initialized'}), 500
-    
-    try:
-        # Get preset info
-        info = audio_interface.get_preset_info(preset_name)
-        if not info:
-            return jsonify({'error': 'Preset not found'}), 404
-        
-        # Generate audio
-        audio = audio_interface.generate_audio_from_preset(preset_name, duration=2.0)
-        if audio is None:
-            return jsonify({'error': 'Failed to generate audio'}), 400
-        
-        # Assess quality
-        role = info.get('category', 'unknown')
-        quality = cpp_engine.assess_quality(audio, role, {})
-        
-        return jsonify({
-            'preset': preset_name,
-            'quality': quality
-        })
-    
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+@app.route('/<path:filename>')
+def serve_static(filename):
+    """Serve static files from the static directory"""
+    return send_from_directory('static', filename)
 
 def initialize_audio_interface(json_files: List[str], engine: Optional[AudioEngine] = None):
     """Initialize the audio interface with JSON datasets"""

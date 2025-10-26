@@ -45,173 +45,100 @@ A research-grade, production-minded, over-engineered AI audio generation system 
 
 ### Prerequisites
 
-- C++17 compatible compiler (GCC 10+, Clang 12+, MSVC 2019+)
-- CMake 3.20+
-- yaml-cpp
-- jsoncpp
-- Python 3.8+
-- pybind11 (for Python bindings)
+- **Python 3.8+** with pip
+- **CMake 3.20+**
+- **C++17 compatible compiler** (GCC, Clang, or MSVC)
+- **Audio libraries** (PortAudio, ALSA on Linux, ASIO on Windows)
 
 ### Quick Start
 
+#### Linux/macOS
+
 ```bash
-# Install dependencies and build everything
-make install-deps
-make all
+# Clone and build
+git clone <repository-url>
+cd ai-audio-generator
+make dev-setup
+
+# Test the system
+make test-integration
+
+# Start web server
+make server
 ```
 
-### Platform-Specific Build Instructions
-
-#### Linux (Ubuntu/Debian)
+#### Windows (MSYS2)
 
 ```bash
-# Install system dependencies
-sudo apt-get update
-sudo apt-get install -y cmake g++ python3 python3-pip
-sudo apt-get install -y libyaml-cpp-dev libjsoncpp-dev pybind11-dev
+# Install MSYS2 and dependencies
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-python mingw-w64-x86_64-python-pip
 
-# Build
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
+# Build for MSYS2
+make msys2-mingw
 
-# Or use the Makefile
-make all
-```
+# Or for UCRT64
+make msys2-ucrt
 
-#### macOS
+# Install Python module
+make python
 
-```bash
-# Install system dependencies
-brew install cmake yaml-cpp jsoncpp python pybind11
-
-# Build
-mkdir build && cd build
-cmake ..
-make -j$(sysctl -n hw.ncpu)
-
-# Or use the Makefile
-make all
-```
-
-#### Windows (MSYS2/MinGW64)
-
-```bash
-# Install MSYS2 from https://www.msys2.org/
-
-# Open MSYS2 MinGW 64-bit terminal and install dependencies
-pacman -S mingw-w64-x86_64-gcc
-pacman -S mingw-w64-x86_64-cmake
-pacman -S mingw-w64-x86_64-yaml-cpp
-pacman -S mingw-w64-x86_64-jsoncpp
-pacman -S mingw-w64-x86_64-python
-pacman -S mingw-w64-x86_64-pybind11
-
-# Build using CMake presets
-mkdir build && cd build
-cmake -G "MinGW Makefiles" ..
-mingw32-make
-
-# Or use the Makefile (auto-detects MSYS2)
-make all
-```
-
-### CMake Presets
-
-The project includes CMake presets for different platforms:
-
-```bash
-# List available presets
-cmake --list-presets
-
-# Configure with a specific preset
-cmake --preset=msys2-mingw64  # For MSYS2/Windows
-cmake --preset=linux-gcc      # For Linux with GCC
-cmake --preset=linux-clang    # For Linux with Clang
-cmake --preset=macos          # For macOS
-
-# Build with preset
-cmake --build build
-```
-
-### Build System Features
-
-The Makefile automatically detects your platform and uses the appropriate tools:
-
-- **Linux**: Uses GCC/Clang with standard Unix Makefiles
-- **macOS**: Uses Apple Clang with standard Unix Makefiles
-- **MSYS2**: Uses MinGW GCC with MinGW Makefiles
-
-### Makefile Targets
-
-```bash
-# Build targets
-make all          # Build everything (C++, Python, Web)
-make build-cpp    # Build C++ engine only
-make build-python # Install Python dependencies
-make build-web    # Build web interface
-
-# Development
-make serve        # Start web server
-make dev-cpp      # Run C++ application
-make audio-demo   # Run audio demo
-
-# Testing
-make test         # Run all tests
-make test-cpp     # Run C++ tests
-make test-python  # Run Python tests
-
-# Cleanup
-make clean        # Clean all build artifacts
-
-# Help
-make help         # Show all available targets
-```
-
-### Troubleshooting
-
-#### MSYS2 Build Issues
-
-If you encounter "command not found" errors on MSYS2:
-
-```bash
-# Make sure you're in the MINGW64 environment, not MSYS2
-# Your prompt should show "MINGW64", not "MSYS"
-
-# Add MinGW bin to PATH
-export PATH=/mingw64/bin:$PATH
-
-# Clean and rebuild
-make clean
-make all
-```
-
-#### CMake Cache Issues
-
-If CMake configuration fails:
-
-```bash
-# Clear CMake cache
-rm -rf build
-rm -rf CMakeCache.txt
-
-# Reconfigure
-make all
+# Test
+make test-integration
 ```
 
 #### Python Bindings Not Building
 
+#### Ubuntu/Debian
 ```bash
-# Install pybind11
-pip install pybind11
+sudo apt-get update
+sudo apt-get install build-essential cmake python3 python3-pip python3-dev
+sudo apt-get install libyaml-cpp-dev libjsoncpp-dev portaudio19-dev
+sudo apt-get install libasound2-dev  # For ALSA on Linux
+pip3 install -r requirements.txt
+```
 
-# Or system package
-sudo apt-get install pybind11-dev  # Debian/Ubuntu
-brew install pybind11               # macOS
-pacman -S mingw-w64-x86_64-pybind11 # MSYS2
+#### macOS
+```bash
+brew install cmake python3 yaml-cpp jsoncpp portaudio
+pip3 install -r requirements.txt
+```
 
-# Reconfigure
-make clean && make all
+#### Windows (MSYS2)
+```bash
+# Install MSYS2 from https://www.msys2.org/
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake
+pacman -S mingw-w64-x86_64-python mingw-w64-x86_64-python-pip
+pacman -S mingw-w64-x86_64-yaml-cpp mingw-w64-x86_64-jsoncpp
+pacman -S mingw-w64-x86_64-portaudio
+pip3 install -r requirements.txt
+```
+
+### Build Targets
+
+```bash
+# Default build
+make all
+
+# Platform-specific builds
+make msys2-mingw    # MSYS2 MinGW
+make msys2-ucrt     # MSYS2 UCRT64
+make debug          # Debug build
+make release        # Release build
+
+# Python module
+make python         # Build and install Python module
+
+# Testing
+make test           # Run C++ tests
+make test-audio     # Test audio generation
+make test-cpp       # Test C++ engine
+make test-integration # Full integration test
+
+# Development
+make dev-setup      # Set up development environment
+make server         # Start web server
+make clean          # Clean build files
+make clean-all      # Clean everything
 ```
 
 ## Usage

@@ -1,329 +1,281 @@
 #!/usr/bin/env python3
 """
-Python adapter for the C++ audio engine
-Provides a clean Python interface to the pybind11-wrapped C++ code
+C++ Engine Adapter for AI Audio Generator
+Provides Python interface to the C++ audio rendering engine via pybind11
 """
 
 import numpy as np
-from typing import Dict, List, Any, Optional
-import logging
-
-logger = logging.getLogger(__name__)
+from typing import Dict, List, Any, Optional, Union
+import json
+import os
 
 try:
-    import aiaudio_cpp
+    import aiaudio_python
     CPP_ENGINE_AVAILABLE = True
-    logger.info("C++ audio engine loaded successfully")
-except ImportError as e:
+except ImportError:
     CPP_ENGINE_AVAILABLE = False
-    logger.warning(f"C++ audio engine not available: {e}")
-    logger.warning("Install with: pip install -e .")
+    print("Warning: C++ engine not available. Install with: pip install -e .")
 
-
-class CPPAudioEngineAdapter:
-    """
-    Adapter class that provides a clean Python interface to the C++ engine.
-    Falls back to Python-only implementation if C++ engine is not available.
-    """
+class CPPAudioEngine:
+    """Python adapter for the C++ AI Audio Generator"""
     
-    def __init__(self, fallback_to_python: bool = True):
-        """
-        Initialize the C++ audio engine adapter.
+    def __init__(self):
+        if not CPP_ENGINE_AVAILABLE:
+            raise ImportError("C++ engine not available. Please build the project first.")
         
-        Args:
-            fallback_to_python: If True, fall back to Python implementation
-                              when C++ engine is not available
-        """
-        self.cpp_engine = None
-        self.fallback_to_python = fallback_to_python
-        self.use_cpp = CPP_ENGINE_AVAILABLE
+        self.engine = aiaudio_python.AIAudioGenerator()
+        self.sample_rate = 44100.0
+        self.channels = 2
         
-        if CPP_ENGINE_AVAILABLE:
-            try:
-                self.cpp_engine = aiaudio_cpp.CPPAudioEngine()
-                logger.info("C++ audio engine initialized")
-            except Exception as e:
-                logger.error(f"Failed to initialize C++ engine: {e}")
-                if not fallback_to_python:
-                    raise
-                self.use_cpp = False
-        else:
-            if not fallback_to_python:
-                raise RuntimeError("C++ engine not available and fallback disabled")
-            logger.info("Using Python-only implementation")
+    def generate_audio(self, prompt: str, role: str = "UNKNOWN", 
+                      tempo: float = 120.0, key: str = "C", scale: str = "major",
+                      max_cpu: float = 0.8, max_latency: float = 10.0,
+                      use_semantic_search: bool = True, apply_policies: bool = True) -> np.ndarray:
+        """Generate audio from text prompt using C++ engine"""
+        try:
+            audio_array = self.engine.generate_audio(
+                prompt=prompt,
+                role=role,
+                tempo=tempo,
+                key=key,
+                scale=scale,
+                max_cpu=max_cpu,
+                max_latency=max_latency,
+                use_semantic_search=use_semantic_search,
+                apply_policies=apply_policies
+            )
+            return np.array(audio_array, dtype=np.float32)
+        except Exception as e:
+            print(f"Error generating audio: {e}")
+            return np.array([], dtype=np.float32)
     
-    def render_audio(self, 
-                     preset: Dict[str, Any],
-                     context: Optional[Dict[str, Any]] = None,
-                     duration: float = 2.0) -> np.ndarray:
-        """
-        Render audio from a preset.
-        
-        Args:
-            preset: Preset dictionary with role, description, parameters, etc.
-            context: Musical context (tempo, key, scale, time_signature)
-            duration: Audio duration in seconds
+    def generate_from_preset(self, preset_params: Dict[str, Any], 
+                           duration: float = 2.0, sample_rate: float = 44100.0) -> np.ndarray:
+        """Generate audio from preset parameters using C++ engine"""
+        try:
+            # Convert preset parameters to Python dict for C++ binding
+            py_params = {}
+            for key, value in preset_params.items():
+                if isinstance(value, (int, float, str)):
+                    py_params[key] = value
+                else:
+                    py_params[key] = str(value)
             
-        Returns:
-            Audio buffer as NumPy array, shape (num_samples, 2), dtype float32
-            
-        Raises:
-            RuntimeError: If rendering fails
-            ValueError: If preset is invalid
-        """
-        if context is None:
-            context = {
-                "tempo": 120.0,
-                "key": 0,
-                "scale": "major",
-                "time_signature": [4, 4]
-            }
-        
-        # Normalize preset format
-        preset_dict = self._normalize_preset(preset)
-        
-        if self.use_cpp and self.cpp_engine:
-            try:
-                audio = self.cpp_engine.render_audio(preset_dict, context, duration)
-                return audio
-            except Exception as e:
-                logger.error(f"C++ rendering failed: {e}")
-                if not self.fallback_to_python:
-                    raise
-                logger.info("Falling back to Python implementation")
-        
-        # Fallback to Python implementation
-        return self._render_audio_python(preset_dict, context, duration)
-    
-    def assess_quality(self,
-                      audio: np.ndarray,
-                      role: str,
-                      context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """
-        Assess audio quality using MOO optimizer.
-        
-        Args:
-            audio: Audio buffer, shape (num_samples, 2), dtype float32
-            role: Preset role (pad, bass, lead, drum, fx)
-            context: Musical context
-            
-        Returns:
-            Quality metrics dictionary:
-            {
-                "overall_score": 0.85,
-                "semantic_match": 0.82,
-                "mix_readiness": 0.88,
-                "perceptual_quality": 0.87,
-                "stability": 0.95,
-                "violations": [],
-                "warnings": []
-            }
-        """
-        if context is None:
-            context = {
-                "tempo": 120.0,
-                "key": 0,
-                "scale": "major"
-            }
-        
-        if self.use_cpp and self.cpp_engine:
-            try:
-                return self.cpp_engine.assess_quality(audio, role, context)
-            except Exception as e:
-                logger.error(f"C++ quality assessment failed: {e}")
-                if not self.fallback_to_python:
-                    raise
-        
-        # Fallback to Python implementation
-        return self._assess_quality_python(audio, role, context)
+            audio_array = self.engine.generate_from_preset(
+                preset_params=py_params,
+                duration=duration,
+                sample_rate=sample_rate
+            )
+            return np.array(audio_array, dtype=np.float32)
+        except Exception as e:
+            print(f"Error generating from preset: {e}")
+            return np.array([], dtype=np.float32)
     
     def get_status(self) -> Dict[str, Any]:
-        """
-        Get system status.
-        
-        Returns:
-            Status dictionary with initialized, loaded_presets, cpu_usage, etc.
-        """
-        if self.use_cpp and self.cpp_engine:
-            try:
-                return self.cpp_engine.get_status()
-            except Exception as e:
-                logger.error(f"Failed to get C++ status: {e}")
-        
-        return {
-            "initialized": True,
-            "loaded_presets": 0,
-            "cpu_usage": 0.0,
-            "memory_usage": 0.0,
-            "active_features": ["python_fallback"],
-            "engine": "python"
-        }
+        """Get system status from C++ engine"""
+        try:
+            return dict(self.engine.get_status())
+        except Exception as e:
+            print(f"Error getting status: {e}")
+            return {"error": str(e)}
     
-    def load_preset(self, preset_path: str):
-        """Load preset from file."""
-        if self.use_cpp and self.cpp_engine:
-            try:
-                self.cpp_engine.load_preset(preset_path)
-                return
-            except Exception as e:
-                logger.error(f"Failed to load preset in C++: {e}")
-        
-        logger.info(f"Loaded preset: {preset_path} (Python mode)")
+    def load_preset(self, file_path: str) -> bool:
+        """Load preset from file using C++ engine"""
+        try:
+            return self.engine.load_preset(file_path)
+        except Exception as e:
+            print(f"Error loading preset: {e}")
+            return False
     
     def get_available_presets(self) -> List[str]:
-        """Get list of available presets."""
-        if self.use_cpp and self.cpp_engine:
+        """Get list of available presets from C++ engine"""
+        try:
+            return list(self.engine.get_available_presets())
+        except Exception as e:
+            print(f"Error getting presets: {e}")
+            return []
+    
+    def render_preset_to_audio(self, preset_data: Dict[str, Any], 
+                             duration: float = 2.0) -> np.ndarray:
+        """Render a preset to audio using C++ engine"""
+        # Extract key parameters for C++ rendering
+        cpp_params = {}
+        
+        # Map common preset parameters
+        if 'frequency' in preset_data:
+            cpp_params['frequency'] = float(preset_data['frequency'])
+        if 'oscillator' in preset_data:
+            osc = preset_data['oscillator']
+            if 'frequency' in osc:
+                cpp_params['frequency'] = float(osc['frequency'])
+            if 'waveform' in osc:
+                cpp_params['waveform'] = str(osc['waveform'])
+        
+        if 'envelope' in preset_data:
+            env = preset_data['envelope']
+            if 'attack' in env:
+                cpp_params['attack'] = float(env['attack'])
+            if 'decay' in env:
+                cpp_params['decay'] = float(env['decay'])
+            if 'sustain' in env:
+                cpp_params['sustain'] = float(env['sustain'])
+            if 'release' in env:
+                cpp_params['release'] = float(env['release'])
+        
+        if 'filter' in preset_data:
+            filt = preset_data['filter']
+            if 'cutoff' in filt:
+                cpp_params['cutoff'] = float(filt['cutoff'])
+            if 'resonance' in filt:
+                cpp_params['resonance'] = float(filt['resonance'])
+        
+        # Add any other numeric parameters
+        for key, value in preset_data.items():
+            if isinstance(value, (int, float)) and key not in cpp_params:
+                cpp_params[key] = float(value)
+        
+        return self.generate_from_preset(cpp_params, duration, self.sample_rate)
+
+class HybridAudioInterface:
+    """Hybrid audio interface that combines Python and C++ engines"""
+    
+    def __init__(self, use_cpp_engine: bool = True):
+        self.use_cpp_engine = use_cpp_engine and CPP_ENGINE_AVAILABLE
+        self.cpp_engine = None
+        
+        if self.use_cpp_engine:
             try:
-                return self.cpp_engine.get_available_presets()
+                self.cpp_engine = CPPAudioEngine()
+                print("C++ engine initialized successfully")
             except Exception as e:
-                logger.error(f"Failed to get presets from C++: {e}")
+                print(f"Failed to initialize C++ engine: {e}")
+                self.use_cpp_engine = False
         
-        return []
+        if not self.use_cpp_engine:
+            print("Using Python-only audio generation")
     
-    def set_configuration(self, config: Dict[str, str]):
-        """Set system configuration."""
-        if self.use_cpp and self.cpp_engine:
-            try:
-                self.cpp_engine.set_configuration(config)
-                return
-            except Exception as e:
-                logger.error(f"Failed to set C++ configuration: {e}")
-        
-        logger.info(f"Configuration set (Python mode): {config}")
+    def generate_audio(self, prompt: str, role: str = "UNKNOWN", 
+                      tempo: float = 120.0, key: str = "C", scale: str = "major",
+                      max_cpu: float = 0.8, max_latency: float = 10.0) -> np.ndarray:
+        """Generate audio using the best available engine"""
+        if self.use_cpp_engine and self.cpp_engine:
+            return self.cpp_engine.generate_audio(
+                prompt, role, tempo, key, scale, max_cpu, max_latency
+            )
+        else:
+            # Fallback to Python-only generation
+            return self._generate_python_audio(prompt, role, tempo, key, scale)
     
-    def _normalize_preset(self, preset: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Normalize preset to expected format.
-        """
-        normalized = {
-            "prompt": preset.get("description", preset.get("name", "unknown")),
-            "role": preset.get("category", preset.get("role", "unknown")).lower(),
-            "constraints": {
-                "max_cpu": 0.8,
-                "max_latency": 10.0,
-                "lufs_target": -18.0,
-                "true_peak_limit": -1.0
-            }
-        }
-        
-        # Copy over any existing constraints
-        if "constraints" in preset:
-            normalized["constraints"].update(preset["constraints"])
-        
-        return normalized
+    def generate_from_preset(self, preset_data: Dict[str, Any], 
+                           duration: float = 2.0) -> np.ndarray:
+        """Generate audio from preset using the best available engine"""
+        if self.use_cpp_engine and self.cpp_engine:
+            return self.cpp_engine.render_preset_to_audio(preset_data, duration)
+        else:
+            # Fallback to Python-only generation
+            return self._generate_python_preset_audio(preset_data, duration)
     
-    def _render_audio_python(self,
-                            preset: Dict[str, Any],
-                            context: Dict[str, Any],
-                            duration: float) -> np.ndarray:
-        """
-        Pure Python fallback implementation.
-        Generates a simple tone for testing.
-        """
+    def _generate_python_audio(self, prompt: str, role: str, tempo: float, 
+                              key: str, scale: str) -> np.ndarray:
+        """Fallback Python-only audio generation"""
+        # Simple sine wave generation as fallback
+        duration = 2.0
         sample_rate = 44100
-        num_samples = int(duration * sample_rate)
+        t = np.linspace(0, duration, int(sample_rate * duration), False)
         
-        # Generate a simple sine wave
-        t = np.linspace(0, duration, num_samples, False)
-        frequency = 440.0  # A4
+        # Generate a simple tone based on role
+        if role == "BASS":
+            frequency = 80.0
+        elif role == "LEAD":
+            frequency = 440.0
+        elif role == "PAD":
+            frequency = 220.0
+        else:
+            frequency = 440.0
         
-        # Simple sine wave with envelope
         audio = np.sin(2 * np.pi * frequency * t)
         
-        # Apply simple ADSR envelope
-        attack = 0.1
-        decay = 0.2
-        sustain = 0.7
-        release = 0.5
+        # Apply simple envelope
+        attack_samples = int(0.1 * sample_rate)
+        release_samples = int(0.5 * sample_rate)
         
-        envelope = np.ones(num_samples)
-        attack_samples = int(attack * sample_rate)
-        decay_samples = int(decay * sample_rate)
-        release_samples = int(release * sample_rate)
+        if len(audio) > attack_samples:
+            audio[:attack_samples] *= np.linspace(0, 1, attack_samples)
+        if len(audio) > release_samples:
+            audio[-release_samples:] *= np.linspace(1, 0, release_samples)
         
-        # Attack
-        if attack_samples > 0:
-            envelope[:attack_samples] = np.linspace(0, 1, attack_samples)
-        
-        # Decay
-        if decay_samples > 0:
-            start = attack_samples
-            end = min(start + decay_samples, num_samples)
-            envelope[start:end] = np.linspace(1, sustain, end - start)
-        
-        # Sustain
-        sustain_start = attack_samples + decay_samples
-        sustain_end = max(0, num_samples - release_samples)
-        if sustain_start < sustain_end:
-            envelope[sustain_start:sustain_end] = sustain
-        
-        # Release
-        if release_samples > 0:
-            release_start = max(0, num_samples - release_samples)
-            envelope[release_start:] = np.linspace(sustain, 0, num_samples - release_start)
-        
-        audio *= envelope
-        
-        # Convert to stereo
-        audio_stereo = np.column_stack((audio, audio)).astype(np.float32)
-        
-        return audio_stereo
+        return audio.astype(np.float32)
     
-    def _assess_quality_python(self,
-                              audio: np.ndarray,
-                              role: str,
-                              context: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Pure Python fallback quality assessment.
-        """
-        # Simple quality metrics based on audio characteristics
-        rms = np.sqrt(np.mean(audio ** 2))
-        peak = np.max(np.abs(audio))
+    def _generate_python_preset_audio(self, preset_data: Dict[str, Any], 
+                                    duration: float) -> np.ndarray:
+        """Fallback Python-only preset audio generation"""
+        sample_rate = 44100
+        t = np.linspace(0, duration, int(sample_rate * duration), False)
         
-        # Simple quality score based on RMS and peak
-        quality = 0.7 if 0.1 < rms < 0.8 and peak < 1.0 else 0.5
+        # Extract frequency
+        frequency = 440.0
+        if 'frequency' in preset_data:
+            frequency = float(preset_data['frequency'])
+        elif 'oscillator' in preset_data and 'frequency' in preset_data['oscillator']:
+            frequency = float(preset_data['oscillator']['frequency'])
         
-        return {
-            "overall_score": quality,
-            "semantic_match": quality * 0.9,
-            "mix_readiness": quality * 1.1,
-            "perceptual_quality": quality,
-            "stability": quality * 1.05,
-            "violations": [],
-            "warnings": [] if peak < 1.0 else ["Potential clipping detected"]
-        }
-
-
-# Global instance for easy access
-_engine_instance: Optional[CPPAudioEngineAdapter] = None
-
-
-def get_engine(fallback_to_python: bool = True) -> CPPAudioEngineAdapter:
-    """
-    Get or create the global C++ engine instance.
+        # Generate audio
+        audio = np.sin(2 * np.pi * frequency * t)
+        
+        # Apply envelope if available
+        if 'envelope' in preset_data:
+            env = preset_data['envelope']
+            attack = float(env.get('attack', 0.1))
+            release = float(env.get('release', 0.5))
+            
+            attack_samples = int(attack * sample_rate)
+            release_samples = int(release * sample_rate)
+            
+            if len(audio) > attack_samples:
+                audio[:attack_samples] *= np.linspace(0, 1, attack_samples)
+            if len(audio) > release_samples:
+                audio[-release_samples:] *= np.linspace(1, 0, release_samples)
+        
+        return audio.astype(np.float32)
     
-    Args:
-        fallback_to_python: If True, fall back to Python implementation
+    def get_status(self) -> Dict[str, Any]:
+        """Get system status"""
+        if self.use_cpp_engine and self.cpp_engine:
+            return self.cpp_engine.get_status()
+        else:
+            return {
+                "engine": "python_only",
+                "cpp_available": CPP_ENGINE_AVAILABLE,
+                "status": "ready"
+            }
+
+def create_hybrid_interface(use_cpp: bool = True) -> HybridAudioInterface:
+    """Create a hybrid audio interface"""
+    return HybridAudioInterface(use_cpp)
+
+def test_cpp_engine():
+    """Test the C++ engine functionality"""
+    if not CPP_ENGINE_AVAILABLE:
+        print("C++ engine not available")
+        return False
+    
+    try:
+        engine = CPPAudioEngine()
+        print("C++ engine created successfully")
         
-    Returns:
-        CPPAudioEngineAdapter instance
-    """
-    global _engine_instance
-    if _engine_instance is None:
-        _engine_instance = CPPAudioEngineAdapter(fallback_to_python)
-    return _engine_instance
+        # Test status
+        status = engine.get_status()
+        print(f"Status: {status}")
+        
+        # Test audio generation
+        audio = engine.generate_audio("test sound", "LEAD", 120.0)
+        print(f"Generated audio: {len(audio)} samples")
+        
+        return True
+    except Exception as e:
+        print(f"Error testing C++ engine: {e}")
+        return False
 
-
-# Convenience functions
-def render_audio(preset: Dict[str, Any],
-                context: Optional[Dict[str, Any]] = None,
-                duration: float = 2.0) -> np.ndarray:
-    """Render audio using the global engine instance."""
-    return get_engine().render_audio(preset, context, duration)
-
-
-def assess_quality(audio: np.ndarray,
-                  role: str,
-                  context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Assess quality using the global engine instance."""
-    return get_engine().assess_quality(audio, role, context)
+if __name__ == "__main__":
+    # Test the C++ engine
+    test_cpp_engine()

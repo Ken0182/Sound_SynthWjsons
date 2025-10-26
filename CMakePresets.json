@@ -1,112 +1,80 @@
 {
   "version": 3,
-  "cmakeMinimumRequired": {
-    "major": 3,
-    "minor": 20,
-    "patch": 0
-  },
   "configurePresets": [
     {
       "name": "default",
-      "displayName": "Default Config",
+      "displayName": "Default Configuration",
       "description": "Default build configuration",
       "generator": "Unix Makefiles",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON"
+      }
+    },
+    {
+      "name": "msys2-mingw",
+      "displayName": "MSYS2 MinGW Configuration",
+      "description": "Build configuration for MSYS2 with MinGW-w64",
+      "generator": "MinGW Makefiles",
+      "binaryDir": "${sourceDir}/build-msys2",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+        "CMAKE_PREFIX_PATH": "C:/msys64/mingw64",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_RC_COMPILER": "windres"
+      },
+      "environment": {
+        "PATH": "C:/msys64/mingw64/bin;C:/msys64/usr/bin;${env:PATH}"
+      }
+    },
+    {
+      "name": "msys2-ucrt",
+      "displayName": "MSYS2 UCRT Configuration",
+      "description": "Build configuration for MSYS2 with UCRT64",
+      "generator": "MinGW Makefiles",
+      "binaryDir": "${sourceDir}/build-msys2-ucrt",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+        "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_RC_COMPILER": "windres"
+      },
+      "environment": {
+        "PATH": "C:/msys64/ucrt64/bin;C:/msys64/usr/bin;${env:PATH}"
       }
     },
     {
       "name": "debug",
-      "displayName": "Debug",
-      "description": "Debug build with symbols",
-      "inherits": "default",
+      "displayName": "Debug Configuration",
+      "description": "Debug build configuration",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-debug",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+        "CMAKE_CXX_FLAGS_DEBUG": "-g -O0 -DDEBUG"
       }
     },
     {
       "name": "release",
-      "displayName": "Release",
-      "description": "Optimized release build",
-      "inherits": "default",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    },
-    {
-      "name": "msys2-mingw64",
-      "displayName": "MSYS2 MinGW64",
-      "description": "MSYS2/MinGW64 build configuration for Windows",
-      "generator": "MinGW Makefiles",
-      "binaryDir": "${sourceDir}/build",
+      "displayName": "Release Configuration",
+      "description": "Release build configuration",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++",
-        "CMAKE_MAKE_PROGRAM": "mingw32-make"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": ["Windows"]
-        }
-      }
-    },
-    {
-      "name": "msys2-debug",
-      "displayName": "MSYS2 MinGW64 Debug",
-      "description": "MSYS2/MinGW64 debug build",
-      "inherits": "msys2-mingw64",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "linux-gcc",
-      "displayName": "Linux GCC",
-      "description": "Linux build with GCC",
-      "inherits": "default",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": ["Linux"]
-        }
-      }
-    },
-    {
-      "name": "linux-clang",
-      "displayName": "Linux Clang",
-      "description": "Linux build with Clang",
-      "inherits": "default",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": ["Linux"]
-        }
-      }
-    },
-    {
-      "name": "macos",
-      "displayName": "macOS",
-      "description": "macOS build with Apple Clang",
-      "inherits": "default",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": ["macOS"]
-        }
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O3 -march=native -ffast-math -DNDEBUG"
       }
     }
   ],
@@ -114,51 +82,46 @@
     {
       "name": "default",
       "configurePreset": "default",
-      "jobs": 4
+      "displayName": "Default Build",
+      "description": "Default build preset"
+    },
+    {
+      "name": "msys2-mingw",
+      "configurePreset": "msys2-mingw",
+      "displayName": "MSYS2 MinGW Build",
+      "description": "Build for MSYS2 MinGW environment"
+    },
+    {
+      "name": "msys2-ucrt",
+      "configurePreset": "msys2-ucrt",
+      "displayName": "MSYS2 UCRT Build",
+      "description": "Build for MSYS2 UCRT environment"
     },
     {
       "name": "debug",
       "configurePreset": "debug",
-      "jobs": 4
+      "displayName": "Debug Build",
+      "description": "Debug build preset"
     },
     {
       "name": "release",
       "configurePreset": "release",
-      "jobs": 4
-    },
-    {
-      "name": "msys2-mingw64",
-      "configurePreset": "msys2-mingw64",
-      "jobs": 4
-    },
-    {
-      "name": "msys2-debug",
-      "configurePreset": "msys2-debug",
-      "jobs": 4
-    },
-    {
-      "name": "linux-gcc",
-      "configurePreset": "linux-gcc",
-      "jobs": 4
-    },
-    {
-      "name": "linux-clang",
-      "configurePreset": "linux-clang",
-      "jobs": 4
-    },
-    {
-      "name": "macos",
-      "configurePreset": "macos",
-      "jobs": 4
+      "displayName": "Release Build",
+      "description": "Release build preset"
     }
   ],
   "testPresets": [
     {
       "name": "default",
       "configurePreset": "default",
-      "output": {
-        "outputOnFailure": true
-      }
+      "displayName": "Default Tests",
+      "description": "Run tests with default configuration"
+    },
+    {
+      "name": "msys2-mingw",
+      "configurePreset": "msys2-mingw",
+      "displayName": "MSYS2 MinGW Tests",
+      "description": "Run tests with MSYS2 MinGW configuration"
     }
   ]
 }

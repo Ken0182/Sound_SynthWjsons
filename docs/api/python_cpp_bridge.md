@@ -2,547 +2,314 @@
 
 ## Overview
 
-The Python-C++ bridge provides seamless integration between the Python audio interface and the C++ audio rendering engine. It uses pybind11 to expose C++ functionality to Python with minimal overhead.
+The Python-C++ bridge enables seamless communication between the Python semantic engine and the C++ audio rendering system. This document describes the API contract, data flow, and implementation details.
 
 ## Architecture
 
 ```
-┌───────────────────────────┐
-│     Python Layer          │
-│  - audio_interface.py     │
-│  - web_server.py          │
-│  - cpp_engine.py          │
-└─────────┬─────────────────┘
-          │ Python-C++ Bridge
-          │ (pybind11)
-┌─────────▼─────────────────┐
-│     C++ Layer             │
-│  - python_bindings.cpp    │
-│  - AIAudioGenerator       │
-│  - DSPGraph               │
-└───────────────────────────┘
+Python Layer          Bridge Layer          C++ Layer
+┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+│ AudioPreset │─────▶│ pybind11    │─────▶│ AIAudioGen  │
+│ Generator   │      │ Bindings    │      │ erator      │
+└─────────────┘      └─────────────┘      └─────────────┘
+│                     │                     │
+│ cpp_engine.py       │ aiaudio_python.so   │ src/main_app.cpp
+│                     │                     │
+└─────────────────────┴─────────────────────┘
 ```
 
-## Installation
+## API Contract
 
-### Prerequisites
+### Data Types
 
-```bash
-# Install pybind11
-pip install pybind11
+#### Audio Buffer
+- **Python**: `numpy.ndarray` (float32)
+- **C++**: `std::vector<float>` or `AudioBuffer`
+- **Format**: Mono or stereo, 44.1kHz sample rate
 
-# Ubuntu/Debian
-sudo apt-get install pybind11-dev
+#### Preset Parameters
+- **Python**: `Dict[str, Any]`
+- **C++**: `std::map<std::string, std::variant<double, std::string>>`
+- **Serialization**: JSON-compatible types only
 
-# macOS
-brew install pybind11
+#### Generation Request
+- **Python**: Function parameters
+- **C++**: `GenerationRequest` struct
+- **Threading**: Single-threaded Python → Multi-threaded C++
 
-# MSYS2
-pacman -S mingw-w64-x86_64-pybind11
-```
+### Core Functions
 
-### Build Instructions
-
-```bash
-# Configure with Python bindings
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-
-# Install Python module
-make install
-# Or manually copy the module
-cp aiaudio_cpp*.so /path/to/python/site-packages/
-```
-
-## Python API
-
-### CPPAudioEngineAdapter
-
-Main adapter class that provides a clean Python interface to the C++ engine.
-
-#### Constructor
+#### 1. Audio Generation
 
 ```python
-from cpp_engine import CPPAudioEngineAdapter
+# Python Interface
+def generate_audio(prompt: str, role: str = "UNKNOWN", 
+                  tempo: float = 120.0, key: str = "C", 
+                  scale: str = "major", max_cpu: float = 0.8,
+                  max_latency: float = 10.0) -> np.ndarray
+```
 
-engine = CPPAudioEngineAdapter(fallback_to_python=True)
+```cpp
+// C++ Implementation
+GenerationResult generate(const GenerationRequest& request);
 ```
 
 **Parameters:**
-- `fallback_to_python` (bool): If True, fall back to Python implementation when C++ engine is unavailable
+- `prompt`: Text description of desired sound
+- `role`: Musical role (PAD, BASS, LEAD, etc.)
+- `tempo`: Tempo in BPM
+- `key`: Musical key (C, D, E, etc.)
+- `scale`: Scale type (major, minor, etc.)
+- `max_cpu`: Maximum CPU usage (0.0-1.0)
+- `max_latency`: Maximum latency in milliseconds
 
-#### render_audio()
+**Returns:**
+- `numpy.ndarray`: Audio samples as float32 array
 
-Render audio from a preset using the C++ engine.
+#### 2. Preset-based Generation
 
 ```python
-audio = engine.render_audio(
-    preset={
-        "name": "Warm Pad",
-        "role": "pad",
-        "description": "Warm atmospheric pad",
-        "category": "pad",
-        "parameters": {
-            "frequency": 440.0,
-            "amplitude": 0.5
-        }
-    },
-    context={
-        "tempo": 120.0,
-        "key": 0,
-        "scale": "major",
-        "time_signature": [4, 4]
-    },
-    duration=2.0
-)
+# Python Interface
+def generate_from_preset(preset_params: Dict[str, Any], 
+                        duration: float = 2.0, 
+                        sample_rate: float = 44100.0) -> np.ndarray
+```
+
+```cpp
+// C++ Implementation
+AudioBuffer renderGraph(const DSPGraph& graph, size_t numSamples);
 ```
 
 **Parameters:**
-- `preset` (Dict[str, Any]): Preset dictionary
-  - `name` (str): Preset name
-  - `role` (str): Role (pad, bass, lead, drum, fx)
-  - `description` (str): Description used as prompt
-  - `category` (str): Category/role
-  - `parameters` (dict): Audio parameters
-  - `constraints` (dict, optional): Rendering constraints
-- `context` (Dict[str, Any], optional): Musical context
-  - `tempo` (float): BPM (default: 120.0)
-  - `key` (int): Key (0=C, 1=C#, ..., 11=B) (default: 0)
-  - `scale` (str): Scale ("major" or "minor") (default: "major")
-  - `time_signature` (List[int]): Time signature [num, denom] (default: [4, 4])
-- `duration` (float): Duration in seconds (default: 2.0)
+- `preset_params`: Dictionary of preset parameters
+- `duration`: Audio duration in seconds
+- `sample_rate`: Sample rate in Hz
 
 **Returns:**
-- `np.ndarray`: Audio buffer with shape (num_samples, 2) and dtype float32
+- `numpy.ndarray`: Rendered audio samples
 
-**Raises:**
-- `RuntimeError`: If rendering fails
-- `ValueError`: If preset is invalid
-
-#### assess_quality()
-
-Assess audio quality using the C++ MOO optimizer.
+#### 3. System Status
 
 ```python
-quality = engine.assess_quality(
-    audio=audio_buffer,  # NumPy array (num_samples, 2)
-    role="pad",
-    context={"tempo": 120.0, "key": 0, "scale": "major"}
-)
+# Python Interface
+def get_status() -> Dict[str, Any]
 ```
 
-**Parameters:**
-- `audio` (np.ndarray): Audio buffer, shape (num_samples, 2), dtype float32
-- `role` (str): Preset role (pad, bass, lead, drum, fx)
-- `context` (Dict[str, Any], optional): Musical context
-
-**Returns:**
-- `Dict[str, Any]`: Quality metrics
-  ```python
-  {
-      "overall_score": 0.85,
-      "semantic_match": 0.82,
-      "mix_readiness": 0.88,
-      "perceptual_quality": 0.87,
-      "stability": 0.95,
-      "violations": [],
-      "warnings": ["Some warning"]
-  }
-  ```
-
-#### get_status()
-
-Get system status.
-
-```python
-status = engine.get_status()
+```cpp
+// C++ Implementation
+SystemStatus getStatus() const;
 ```
 
 **Returns:**
-- `Dict[str, Any]`: Status dictionary
-  ```python
-  {
-      "initialized": True,
-      "loaded_presets": 10,
-      "cpu_usage": 0.45,
-      "memory_usage": 256.0,
-      "active_features": ["moo", "dsp_ir", "semantic"],
-      "engine": "cpp"
-  }
-  ```
+- `Dict[str, Any]`: System status information
 
-#### Other Methods
+## Data Flow
 
-```python
-# Load preset from file
-engine.load_preset("/path/to/preset.json")
+### 1. Preset Loading Flow
 
-# Get available presets
-presets = engine.get_available_presets()  # Returns List[str]
-
-# Set configuration
-engine.set_configuration({
-    "semantic_model": "advanced",
-    "quality_threshold": "0.8"
-})
+```
+JSON File → Python Parser → Normalized Preset → C++ DSP Graph → Audio Buffer
 ```
 
-### Convenience Functions
+1. **Python**: Load and parse JSON preset file
+2. **Python**: Normalize parameters to SI units
+3. **Python**: Apply semantic search and policies
+4. **Bridge**: Convert Python dict to C++ map
+5. **C++**: Build DSP graph from parameters
+6. **C++**: Render audio using real-time engine
+7. **Bridge**: Convert C++ vector to numpy array
+8. **Python**: Return audio for playback
 
-Module-level functions for quick access:
+### 2. Real-time Generation Flow
 
-```python
-from cpp_engine import render_audio, assess_quality, get_engine
-
-# Render audio
-audio = render_audio(preset, context, duration=2.0)
-
-# Assess quality
-quality = assess_quality(audio, "pad", context)
-
-# Get engine instance
-engine = get_engine()
+```
+Text Prompt → Semantic Search → Policy Application → C++ Rendering → Audio Output
 ```
 
-## C++ API (pybind11 Module)
+1. **Python**: Generate query embedding
+2. **Python**: Search for similar presets
+3. **Python**: Apply role-based policies
+4. **Bridge**: Transfer decision context to C++
+5. **C++**: Generate audio using optimized algorithms
+6. **Bridge**: Return audio buffer to Python
+7. **Python**: Play audio through audio interface
 
-### CPPAudioEngine
+## Threading Model
 
-Low-level C++ engine exposed to Python.
+### Python Side
+- **Main Thread**: UI and API calls
+- **Audio Thread**: Playback and real-time audio
+- **Worker Threads**: Semantic processing and file I/O
 
-```python
-import aiaudio_cpp
+### C++ Side
+- **Audio Thread**: Real-time DSP processing
+- **Worker Threads**: Graph building and optimization
+- **Background Threads**: Quality assessment and monitoring
 
-engine = aiaudio_cpp.CPPAudioEngine()
-```
+### Bridge Coordination
+- **GIL Release**: Python releases GIL during C++ calls
+- **Memory Management**: Shared ownership of audio buffers
+- **Error Handling**: Exception translation between languages
 
-#### Methods
+## Memory Management
 
-##### render_audio()
+### Audio Buffers
+- **Ownership**: C++ owns the buffer, Python gets a view
+- **Lifetime**: Managed by pybind11 smart pointers
+- **Copying**: Minimal copying, prefer move semantics
 
-```python
-audio = engine.render_audio(
-    preset_dict={
-        "prompt": "Warm pad",
-        "role": "pad",
-        "constraints": {
-            "max_cpu": 0.8,
-            "max_latency": 10.0,
-            "lufs_target": -18.0,
-            "true_peak_limit": -1.0
-        }
-    },
-    context_dict={
-        "tempo": 120.0,
-        "key": 0,
-        "scale": "major",
-        "time_signature": [4, 4]
-    },
-    duration=2.0
-)
-```
-
-##### assess_quality()
-
-```python
-quality = engine.assess_quality(
-    audio=audio_buffer,
-    role="pad",
-    context_dict={"tempo": 120.0, "key": 0, "scale": "major"}
-)
-```
-
-##### get_status()
-
-```python
-status = engine.get_status()
-```
-
-##### load_preset()
-
-```python
-engine.load_preset("/path/to/preset.json")
-```
-
-##### get_available_presets()
-
-```python
-presets = engine.get_available_presets()
-```
-
-##### set_configuration()
-
-```python
-engine.set_configuration({"key": "value"})
-```
-
-### Enums
-
-#### Role
-
-```python
-from aiaudio_cpp import Role
-
-Role.UNKNOWN
-Role.PAD
-Role.BASS
-Role.LEAD
-Role.DRUM
-Role.FX
-```
-
-### Module Functions
-
-```python
-# Get version
-version = aiaudio_cpp.get_version()  # "1.0.0"
-
-# Get sample rate
-sr = aiaudio_cpp.get_sample_rate()  # 44100
-```
-
-## Data Format Specifications
-
-### Audio Buffer Format
-
-Audio buffers are represented as NumPy arrays:
-
-```python
-audio: np.ndarray
-# Shape: (num_samples, 2)  # Stereo
-# dtype: np.float32
-# Range: [-1.0, 1.0]
-# Sample rate: 44100 Hz (default)
-```
-
-Example:
-```python
-# 2 seconds of stereo audio at 44.1 kHz
-num_samples = 2 * 44100
-audio = np.zeros((num_samples, 2), dtype=np.float32)
-```
-
-### Preset Dictionary Format
-
-```python
-preset = {
-    "name": "Warm Pad",
-    "role": "pad",  # pad, bass, lead, drum, fx
-    "description": "Warm atmospheric pad with lush reverb",
-    "category": "pad",
-    "parameters": {
-        "frequency": 440.0,
-        "amplitude": 0.5,
-        "attack": 0.2,
-        "decay": 0.5,
-        "sustain": 0.7,
-        "release": 2.0
-    },
-    "constraints": {
-        "max_cpu": 0.8,
-        "max_latency": 10.0,
-        "lufs_target": -18.0,
-        "true_peak_limit": -1.0
-    }
-}
-```
-
-### Context Dictionary Format
-
-```python
-context = {
-    "tempo": 120.0,           # BPM
-    "key": 0,                 # 0=C, 1=C#, ..., 11=B
-    "scale": "major",         # "major" or "minor"
-    "time_signature": [4, 4]  # [numerator, denominator]
-}
-```
-
-## Threading and GIL Management
-
-The bridge automatically manages the Python Global Interpreter Lock (GIL) for optimal performance:
-
-```python
-# GIL is released during C++ processing
-audio = engine.render_audio(preset, context)
-# GIL is reacquired before returning to Python
-```
-
-This allows:
-- Concurrent Python threads while C++ is processing
-- Maximum C++ performance without GIL overhead
-- Safe multithreading
+### Preset Data
+- **Serialization**: JSON-compatible types only
+- **Validation**: Type checking at bridge boundary
+- **Cleanup**: Automatic cleanup via RAII
 
 ## Error Handling
 
 ### Python Exceptions
-
 ```python
 try:
-    audio = engine.render_audio(preset, context)
-except ValueError as e:
-    # Invalid preset parameters
-    print(f"Invalid preset: {e}")
+    audio = engine.generate_audio("test")
 except RuntimeError as e:
-    # C++ rendering error
-    print(f"Rendering failed: {e}")
-except Exception as e:
-    # Unexpected error
-    print(f"Error: {e}")
+    print(f"Generation failed: {e}")
 ```
 
 ### C++ Exceptions
-
-C++ exceptions are automatically converted to Python exceptions:
-
 ```cpp
-// C++ code
-throw std::runtime_error("DSP error");
-// Becomes Python RuntimeError
+try {
+    auto result = generator.generate(request);
+} catch (const AIAudioException& e) {
+    // Handle audio-specific errors
+} catch (const std::exception& e) {
+    // Handle general errors
+}
 ```
+
+### Bridge Translation
+- **C++ → Python**: `std::exception` → `RuntimeError`
+- **Python → C++**: `ValueError` → `std::invalid_argument`
+- **Audio Errors**: Specialized exception types
 
 ## Performance Considerations
 
-### Zero-Copy Buffer Transfer
-
-The bridge uses NumPy's buffer protocol for efficient memory transfer:
-
-```python
-# No copying - direct memory access
-audio = engine.render_audio(preset, context)  # O(1) copy
-```
-
-### Buffer Reuse
-
-For repeated rendering, reuse buffers:
-
-```python
-# Preallocate buffer
-num_samples = int(2.0 * 44100)
-audio_buffer = np.zeros((num_samples, 2), dtype=np.float32)
-
-# Render into existing buffer (if supported)
-engine.render_audio(preset, context, duration=2.0)
-```
-
 ### Latency Optimization
+- **Buffer Size**: 64-512 samples for low latency
+- **Threading**: Minimize context switches
+- **Memory**: Avoid unnecessary copies
+- **Caching**: Cache compiled DSP graphs
 
-```python
-# Reduce duration for faster previews
-audio = engine.render_audio(preset, context, duration=1.0)
+### CPU Usage
+- **Profiling**: Monitor CPU usage per component
+- **Optimization**: Use SIMD instructions in C++
+- **Load Balancing**: Distribute work across threads
+- **Quality vs Speed**: Configurable quality settings
 
-# Use caching for frequently accessed presets
-engine.load_preset("frequently_used.json")
-```
+### Memory Usage
+- **Buffer Pool**: Reuse audio buffers
+- **Smart Pointers**: Automatic memory management
+- **Garbage Collection**: Minimize Python GC pressure
+- **Memory Mapping**: Use memory-mapped files for large datasets
 
-## Integration with Flask Web Server
-
-```python
-from flask import Flask, jsonify, request
-from cpp_engine import get_engine
-import numpy as np
-
-app = Flask(__name__)
-engine = get_engine()
-
-@app.route('/api/render', methods=['POST'])
-def render():
-    data = request.json
-    preset = data['preset']
-    context = data.get('context', {})
-    duration = data.get('duration', 2.0)
-    
-    try:
-        audio = engine.render_audio(preset, context, duration)
-        
-        # Convert to list for JSON serialization
-        audio_list = audio.tolist()
-        
-        return jsonify({
-            'audio': audio_list,
-            'sample_rate': 44100,
-            'channels': 2,
-            'duration': duration
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-```
-
-## Testing
+## Testing Strategy
 
 ### Unit Tests
+- **Python**: Test individual functions
+- **C++**: Test core algorithms
+- **Bridge**: Test data conversion
 
-```python
-import unittest
-import numpy as np
-from cpp_engine import CPPAudioEngineAdapter
+### Integration Tests
+- **End-to-End**: Full pipeline testing
+- **Performance**: Latency and CPU usage
+- **Stress**: Long-running stability tests
 
-class TestCPPBridge(unittest.TestCase):
-    def setUp(self):
-        self.engine = CPPAudioEngineAdapter(fallback_to_python=True)
-    
-    def test_render_audio(self):
-        preset = {
-            "name": "Test",
-            "role": "pad",
-            "description": "Test preset",
-            "category": "pad"
-        }
-        context = {"tempo": 120.0, "key": 0, "scale": "major"}
-        
-        audio = self.engine.render_audio(preset, context, duration=1.0)
-        
-        self.assertEqual(audio.shape, (44100, 2))
-        self.assertEqual(audio.dtype, np.float32)
-        self.assertTrue(np.all(np.abs(audio) <= 1.0))
-    
-    def test_assess_quality(self):
-        audio = np.random.randn(44100, 2).astype(np.float32) * 0.1
-        quality = self.engine.assess_quality(audio, "pad", {})
-        
-        self.assertIn("overall_score", quality)
-        self.assertGreater(quality["overall_score"], 0.0)
-        self.assertLessEqual(quality["overall_score"], 1.0)
+### Mock Testing
+- **C++ Mock**: Test Python without C++ engine
+- **Python Mock**: Test C++ without Python dependencies
+- **Bridge Mock**: Test data conversion in isolation
+
+## Build Integration
+
+### CMake Configuration
+```cmake
+# Find pybind11
+find_package(pybind11 REQUIRED)
+
+# Create Python module
+pybind11_add_module(aiaudio_python src/python_bindings.cpp)
+
+# Link libraries
+target_link_libraries(aiaudio_python PRIVATE aiaudio_core)
+```
+
+### Python Installation
+```bash
+# Build and install
+pip install -e .
+
+# Or build manually
+python setup.py build_ext --inplace
+```
+
+### Development Setup
+```bash
+# Install dependencies
+pip install pybind11 numpy
+
+# Build C++ library
+mkdir build && cd build
+cmake .. && make
+
+# Install Python module
+pip install -e .
 ```
 
 ## Troubleshooting
 
-### Module Not Found
+### Common Issues
 
-```bash
-# Check if module is built
-ls build/aiaudio_cpp*.so
+1. **Import Error**: C++ module not found
+   - **Solution**: Build the project first
+   - **Check**: `ls build/aiaudio_python.*`
 
-# Add to Python path
-export PYTHONPATH=/path/to/build:$PYTHONPATH
+2. **Memory Error**: Audio buffer corruption
+   - **Solution**: Check buffer size and alignment
+   - **Debug**: Use valgrind or AddressSanitizer
 
-# Or install
-cd build && make install
-```
+3. **Latency Issues**: High audio latency
+   - **Solution**: Reduce buffer size, optimize C++ code
+   - **Check**: Monitor real-time performance
 
-### Import Error
+4. **Threading Issues**: Deadlocks or race conditions
+   - **Solution**: Review threading model
+   - **Debug**: Use thread sanitizer
 
-```python
-# Check if C++ engine is available
-import aiaudio_cpp
-print(aiaudio_cpp.get_version())
-```
+### Debug Tools
 
-### Linking Errors
-
-```bash
-# Check dependencies
-ldd build/aiaudio_cpp*.so
-
-# Install missing libraries
-sudo apt-get install libyaml-cpp-dev libjsoncpp-dev
-```
+- **Python**: `pdb`, `cProfile`, `memory_profiler`
+- **C++**: `gdb`, `valgrind`, `perf`
+- **Bridge**: `pybind11` debug macros
+- **Audio**: `JACK`, `PulseAudio` monitoring
 
 ## Future Enhancements
 
-- [ ] Streaming audio API for real-time processing
-- [ ] Batch rendering for multiple presets
-- [ ] GPU acceleration support
-- [ ] Advanced buffer management with memory pools
-- [ ] Async rendering with callbacks
+### Planned Features
+- **Async Generation**: Non-blocking audio generation
+- **Streaming**: Real-time audio streaming
+- **GPU Acceleration**: CUDA/OpenCL support
+- **Plugin System**: Dynamic loading of audio effects
+
+### API Evolution
+- **Versioning**: Semantic versioning for API changes
+- **Backward Compatibility**: Maintain old API versions
+- **Migration Guide**: Help users upgrade
+- **Deprecation Policy**: Clear deprecation timeline
+
+## Conclusion
+
+The Python-C++ bridge provides a robust, high-performance interface between the semantic engine and audio rendering system. The design prioritizes low latency, memory efficiency, and ease of use while maintaining the flexibility to evolve with changing requirements.
+
+Key success factors:
+- Clear API contract and data flow
+- Efficient memory management
+- Robust error handling
+- Comprehensive testing
+- Good documentation and tooling

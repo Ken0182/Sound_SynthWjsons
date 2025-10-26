@@ -1,304 +1,301 @@
-/**
- * Python bindings for AI Audio Generator
- * Exposes C++ audio rendering engine to Python via pybind11
- */
-
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
+#include <pybind11/functional.h>
+#include <memory>
+#include <vector>
+#include <string>
+#include <map>
+
 #include "main_app.h"
 #include "core_types.h"
+#include "dsp_ir.h"
+#include "normalization.h"
+#include "semantic_fusion.h"
+#include "roles_policies.h"
+#include "decision_heads.h"
+#include "moo_optimization.h"
 
 namespace py = pybind11;
 using namespace aiaudio;
 
-/**
- * Helper function to convert Python dict to GenerationRequest
- */
-AIAudioGenerator::GenerationRequest dictToRequest(const py::dict& preset_dict, 
-                                                   const py::dict& context_dict,
-                                                   double duration) {
-    AIAudioGenerator::GenerationRequest request;
-    
-    // Extract prompt and role
-    if (preset_dict.contains("prompt")) {
-        request.prompt = preset_dict["prompt"].cast<std::string>();
-    }
-    if (preset_dict.contains("description")) {
-        request.prompt = preset_dict["description"].cast<std::string>();
-    }
-    
-    // Parse role
-    if (preset_dict.contains("role")) {
-        std::string role_str = preset_dict["role"].cast<std::string>();
-        if (role_str == "pad") request.role = Role::PAD;
-        else if (role_str == "bass") request.role = Role::BASS;
-        else if (role_str == "lead") request.role = Role::LEAD;
-        else if (role_str == "drum") request.role = Role::DRUM;
-        else if (role_str == "fx") request.role = Role::FX;
-        else request.role = Role::UNKNOWN;
-    }
-    
-    // Extract musical context
-    if (context_dict.contains("tempo")) {
-        request.context.tempo = context_dict["tempo"].cast<double>();
-    }
-    if (context_dict.contains("key")) {
-        request.context.key = context_dict["key"].cast<int>();
-    }
-    if (context_dict.contains("scale")) {
-        request.context.scale = context_dict["scale"].cast<std::string>();
-    }
-    if (context_dict.contains("time_signature")) {
-        auto ts = context_dict["time_signature"].cast<std::vector<int>>();
-        if (ts.size() == 2) {
-            request.context.timeSignature = {ts[0], ts[1]};
-        }
-    }
-    
-    // Set constraints
-    if (preset_dict.contains("constraints")) {
-        auto constraints = preset_dict["constraints"].cast<py::dict>();
-        if (constraints.contains("max_cpu")) {
-            request.constraints.maxCPU = constraints["max_cpu"].cast<double>();
-        }
-        if (constraints.contains("max_latency")) {
-            request.constraints.maxLatency = constraints["max_latency"].cast<double>();
-        }
-        if (constraints.contains("lufs_target")) {
-            request.constraints.lufsTarget = constraints["lufs_target"].cast<double>();
-        }
-        if (constraints.contains("true_peak_limit")) {
-            request.constraints.truePeakLimit = constraints["true_peak_limit"].cast<double>();
-        }
-    } else {
-        // Set sensible defaults
-        request.constraints.maxCPU = 0.8;
-        request.constraints.maxLatency = 10.0;
-        request.constraints.lufsTarget = -18.0;
-        request.constraints.truePeakLimit = -1.0;
-    }
-    
-    return request;
-}
-
-/**
- * Helper function to convert audio buffer to NumPy array
- */
-py::array_t<float> audioBufferToNumPy(const AudioBuffer& buffer) {
-    if (buffer.empty()) {
-        return py::array_t<float>({0, 2});
-    }
-    
-    // Calculate number of frames (stereo)
-    size_t numFrames = buffer.size();
-    
-    // Create NumPy array with shape (numFrames, 2) for stereo
-    py::array_t<float> result({static_cast<py::ssize_t>(numFrames), 2});
-    
-    // Get buffer pointer
-    auto buf = result.request();
-    float* ptr = static_cast<float*>(buf.ptr);
-    
-    // Copy mono to stereo
-    for (size_t i = 0; i < numFrames; ++i) {
-        ptr[i * 2 + 0] = static_cast<float>(buffer[i]); // Left channel
-        ptr[i * 2 + 1] = static_cast<float>(buffer[i]); // Right channel
-    }
-    
-    return result;
-}
-
-/**
- * Helper function to convert NumPy array to audio buffer
- */
-AudioBuffer numpyToAudioBuffer(py::array_t<float> array) {
-    auto buf = array.request();
-    
-    if (buf.ndim != 2 || buf.shape[1] != 2) {
-        throw std::runtime_error("Expected audio array with shape (n, 2)");
-    }
-    
-    size_t numFrames = buf.shape[0];
-    float* ptr = static_cast<float*>(buf.ptr);
-    
-    AudioBuffer buffer(numFrames);
-    
-    // Convert stereo to mono by averaging channels
-    for (size_t i = 0; i < numFrames; ++i) {
-        buffer[i] = (ptr[i * 2 + 0] + ptr[i * 2 + 1]) / 2.0;
-    }
-    
-    return buffer;
-}
-
-/**
- * C++ Engine wrapper class for Python
- */
-class CPPAudioEngine {
+// Python-friendly wrapper for AIAudioGenerator
+class PythonAIAudioGenerator {
 public:
-    CPPAudioEngine() {
-        generator_ = std::make_unique<AIAudioGenerator>();
-    }
+    PythonAIAudioGenerator() : generator_(std::make_unique<AIAudioGenerator>()) {}
     
-    py::array_t<float> render_audio(const py::dict& preset_dict,
-                                     const py::dict& context_dict,
-                                     double duration = 2.0) {
-        // Release GIL during C++ processing
-        py::gil_scoped_release release;
+    // Generate audio from a text prompt
+    py::array_t<float> generate_audio(
+        const std::string& prompt,
+        const std::string& role = "UNKNOWN",
+        double tempo = 120.0,
+        const std::string& key = "C",
+        const std::string& scale = "major",
+        double max_cpu = 0.8,
+        double max_latency = 10.0,
+        bool use_semantic_search = true,
+        bool apply_policies = true
+    ) {
+        // Convert string role to enum
+        Role role_enum = Role::UNKNOWN;
+        if (role == "PAD") role_enum = Role::PAD;
+        else if (role == "BASS") role_enum = Role::BASS;
+        else if (role == "LEAD") role_enum = Role::LEAD;
+        else if (role == "FX") role_enum = Role::FX;
+        else if (role == "TEXTURE") role_enum = Role::TEXTURE;
+        else if (role == "ARP") role_enum = Role::ARP;
+        else if (role == "DRONE") role_enum = Role::DRONE;
+        else if (role == "RHYTHM") role_enum = Role::RHYTHM;
+        else if (role == "BELL") role_enum = Role::BELL;
+        else if (role == "CHORD") role_enum = Role::CHORD;
+        else if (role == "PLUCK") role_enum = Role::PLUCK;
         
-        // Convert Python dict to C++ request
-        auto request = dictToRequest(preset_dict, context_dict, duration);
+        // Create generation request
+        AIAudioGenerator::GenerationRequest request;
+        request.prompt = prompt;
+        request.role = role_enum;
+        request.context.tempo = tempo;
+        request.context.key = 0; // Convert key string to int if needed
+        request.context.scale = scale;
+        request.constraints.maxCPU = max_cpu;
+        request.constraints.maxLatency = max_latency;
+        request.useSemanticSearch = use_semantic_search;
+        request.applyPolicies = apply_policies;
         
         // Generate audio
         auto result = generator_->generate(request);
         
-        // Reacquire GIL before returning to Python
-        py::gil_scoped_acquire acquire;
+        // Convert to numpy array
+        if (result.audio.empty()) {
+            return py::array_t<float>(0);
+        }
         
-        // Convert to NumPy array
-        return audioBufferToNumPy(result.audio);
+        // Create numpy array from audio buffer
+        py::array_t<float> audio_array(result.audio.size());
+        auto buf = audio_array.mutable_unchecked<1>();
+        for (size_t i = 0; i < result.audio.size(); ++i) {
+            buf(i) = result.audio[i];
+        }
+        
+        return audio_array;
     }
     
-    py::dict assess_quality(py::array_t<float> audio,
-                           const std::string& role,
-                           const py::dict& context_dict) {
-        // Release GIL during C++ processing
-        py::gil_scoped_release release;
+    // Generate audio from preset parameters
+    py::array_t<float> generate_from_preset(
+        const std::map<std::string, py::object>& preset_params,
+        double duration = 2.0,
+        double sample_rate = 44100.0
+    ) {
+        // Create a simple DSP graph from preset parameters
+        DSPGraph graph;
         
-        // Convert NumPy to audio buffer
-        AudioBuffer buffer = numpyToAudioBuffer(audio);
+        // Add oscillator node
+        DSPNode oscillator;
+        oscillator.type = "oscillator";
+        oscillator.parameters["frequency"] = 440.0; // Default frequency
+        oscillator.parameters["waveform"] = "sine";
         
-        // Parse role
-        Role roleEnum = Role::UNKNOWN;
-        if (role == "pad") roleEnum = Role::PAD;
-        else if (role == "bass") roleEnum = Role::BASS;
-        else if (role == "lead") roleEnum = Role::LEAD;
-        else if (role == "drum") roleEnum = Role::DRUM;
-        else if (role == "fx") roleEnum = Role::FX;
-        
-        // Create request for quality assessment
-        AIAudioGenerator::GenerationRequest request;
-        request.role = roleEnum;
-        
-        if (context_dict.contains("tempo")) {
-            request.context.tempo = context_dict["tempo"].cast<double>();
-        }
-        if (context_dict.contains("key")) {
-            request.context.key = context_dict["key"].cast<int>();
-        }
-        if (context_dict.contains("scale")) {
-            request.context.scale = context_dict["scale"].cast<std::string>();
+        // Extract frequency from preset if available
+        if (preset_params.find("frequency") != preset_params.end()) {
+            try {
+                oscillator.parameters["frequency"] = preset_params.at("frequency").cast<double>();
+            } catch (...) {
+                // Use default if conversion fails
+            }
         }
         
-        // Assess quality
-        double quality = generator_->assessQuality(buffer, request);
+        graph.nodes.push_back(oscillator);
         
-        // Reacquire GIL before creating Python dict
-        py::gil_scoped_acquire acquire;
+        // Add output node
+        DSPNode output;
+        output.type = "output";
+        output.parameters["gain"] = 0.5;
+        graph.nodes.push_back(output);
         
-        // Create result dict
-        py::dict result;
-        result["overall_score"] = quality;
-        result["semantic_match"] = quality * 0.9;
-        result["mix_readiness"] = quality * 1.1;
-        result["perceptual_quality"] = quality;
-        result["stability"] = quality * 1.05;
+        // Connect oscillator to output
+        DSPConnection connection;
+        connection.from_node = 0;
+        connection.to_node = 1;
+        connection.from_port = "output";
+        connection.to_port = "input";
+        graph.connections.push_back(connection);
         
-        // Add empty violations and warnings lists
-        result["violations"] = py::list();
-        result["warnings"] = py::list();
+        // Render the graph
+        size_t num_samples = static_cast<size_t>(duration * sample_rate);
+        AudioBuffer audio = render_graph_simple(graph, num_samples, sample_rate);
         
-        return result;
+        // Convert to numpy array
+        py::array_t<float> audio_array(audio.size());
+        auto buf = audio_array.mutable_unchecked<1>();
+        for (size_t i = 0; i < audio.size(); ++i) {
+            buf(i) = audio[i];
+        }
+        
+        return audio_array;
     }
     
-    py::dict get_status() const {
+    // Get system status
+    py::dict get_status() {
         auto status = generator_->getStatus();
-        
         py::dict result;
         result["initialized"] = status.initialized;
         result["loaded_presets"] = status.loadedPresets;
         result["cpu_usage"] = status.cpuUsage;
         result["memory_usage"] = status.memoryUsage;
-        
-        py::list features;
-        for (const auto& feature : status.activeFeatures) {
-            features.append(feature);
-        }
-        result["active_features"] = features;
-        
+        result["active_features"] = status.activeFeatures;
         return result;
     }
     
-    void load_preset(const std::string& preset_path) {
-        generator_->loadPreset(preset_path);
+    // Load preset from file
+    bool load_preset(const std::string& file_path) {
+        try {
+            generator_->loadPreset(file_path);
+            return true;
+        } catch (...) {
+            return false;
+        }
     }
     
-    py::list get_available_presets() const {
-        auto presets = generator_->getAvailablePresets();
-        
-        py::list result;
-        for (const auto& preset : presets) {
-            result.append(preset);
-        }
-        return result;
-    }
-    
-    void set_configuration(const py::dict& config) {
-        std::map<std::string, std::string> cpp_config;
-        for (auto item : config) {
-            std::string key = py::str(item.first);
-            std::string value = py::str(item.second);
-            cpp_config[key] = value;
-        }
-        generator_->setConfiguration(cpp_config);
+    // Get available presets
+    std::vector<std::string> get_available_presets() {
+        return generator_->getAvailablePresets();
     }
     
 private:
     std::unique_ptr<AIAudioGenerator> generator_;
+    
+    // Simple graph renderer for preset-based generation
+    AudioBuffer render_graph_simple(const DSPGraph& graph, size_t num_samples, double sample_rate) {
+        AudioBuffer audio(num_samples);
+        
+        // Simple sine wave generation for now
+        double frequency = 440.0;
+        if (!graph.nodes.empty() && graph.nodes[0].parameters.find("frequency") != graph.nodes[0].parameters.end()) {
+            frequency = graph.nodes[0].parameters.at("frequency");
+        }
+        
+        for (size_t i = 0; i < num_samples; ++i) {
+            double t = static_cast<double>(i) / sample_rate;
+            audio[i] = 0.5 * std::sin(2.0 * M_PI * frequency * t);
+        }
+        
+        return audio;
+    }
 };
 
-/**
- * pybind11 module definition
- */
-PYBIND11_MODULE(aiaudio_cpp, m) {
-    m.doc() = "AI Audio Generator C++ Engine - Python bindings";
+// Python-friendly wrapper for preset data
+class PythonPresetData {
+public:
+    PythonPresetData(const std::string& name, const std::string& category, 
+                    const std::string& description, const py::dict& parameters)
+        : name_(name), category_(category), description_(description) {
+        // Convert Python dict to C++ map
+        for (auto item : parameters) {
+            std::string key = item.first.cast<std::string>();
+            py::object value = item.second;
+            
+            // Try to convert to different types
+            try {
+                double dval = value.cast<double>();
+                parameters_[key] = dval;
+            } catch (...) {
+                try {
+                    std::string sval = value.cast<std::string>();
+                    parameters_[key] = sval;
+                } catch (...) {
+                    // Store as string if all else fails
+                    parameters_[key] = py::str(value);
+                }
+            }
+        }
+    }
     
-    // Main engine class
-    py::class_<CPPAudioEngine>(m, "CPPAudioEngine")
+    std::string get_name() const { return name_; }
+    std::string get_category() const { return category_; }
+    std::string get_description() const { return description_; }
+    py::dict get_parameters() const {
+        py::dict result;
+        for (const auto& param : parameters_) {
+            if (std::holds_alternative<double>(param.second)) {
+                result[param.first.c_str()] = std::get<double>(param.second);
+            } else {
+                result[param.first.c_str()] = std::get<std::string>(param.second);
+            }
+        }
+        return result;
+    }
+    
+private:
+    std::string name_;
+    std::string category_;
+    std::string description_;
+    std::map<std::string, std::variant<double, std::string>> parameters_;
+};
+
+PYBIND11_MODULE(aiaudio_python, m) {
+    m.doc() = "AI Audio Generator Python Bindings";
+    
+    // PythonAIAudioGenerator class
+    py::class_<PythonAIAudioGenerator>(m, "AIAudioGenerator")
         .def(py::init<>())
-        .def("render_audio", &CPPAudioEngine::render_audio,
-             py::arg("preset_dict"),
-             py::arg("context_dict"),
+        .def("generate_audio", &PythonAIAudioGenerator::generate_audio,
+             py::arg("prompt"),
+             py::arg("role") = "UNKNOWN",
+             py::arg("tempo") = 120.0,
+             py::arg("key") = "C",
+             py::arg("scale") = "major",
+             py::arg("max_cpu") = 0.8,
+             py::arg("max_latency") = 10.0,
+             py::arg("use_semantic_search") = true,
+             py::arg("apply_policies") = true,
+             "Generate audio from text prompt")
+        .def("generate_from_preset", &PythonAIAudioGenerator::generate_from_preset,
+             py::arg("preset_params"),
              py::arg("duration") = 2.0,
-             "Render audio from a preset using the C++ engine")
-        .def("assess_quality", &CPPAudioEngine::assess_quality,
-             py::arg("audio"),
-             py::arg("role"),
-             py::arg("context_dict"),
-             "Assess audio quality using MOO optimizer")
-        .def("get_status", &CPPAudioEngine::get_status,
+             py::arg("sample_rate") = 44100.0,
+             "Generate audio from preset parameters")
+        .def("get_status", &PythonAIAudioGenerator::get_status,
              "Get system status")
-        .def("load_preset", &CPPAudioEngine::load_preset,
-             py::arg("preset_path"),
+        .def("load_preset", &PythonAIAudioGenerator::load_preset,
+             py::arg("file_path"),
              "Load preset from file")
-        .def("get_available_presets", &CPPAudioEngine::get_available_presets,
-             "Get list of available presets")
-        .def("set_configuration", &CPPAudioEngine::set_configuration,
-             py::arg("config"),
-             "Set system configuration");
+        .def("get_available_presets", &PythonAIAudioGenerator::get_available_presets,
+             "Get list of available presets");
     
-    // Expose Role enum
+    // PythonPresetData class
+    py::class_<PythonPresetData>(m, "PresetData")
+        .def(py::init<const std::string&, const std::string&, const std::string&, const py::dict&>(),
+             py::arg("name"),
+             py::arg("category"),
+             py::arg("description"),
+             py::arg("parameters"))
+        .def("get_name", &PythonPresetData::get_name)
+        .def("get_category", &PythonPresetData::get_category)
+        .def("get_description", &PythonPresetData::get_description)
+        .def("get_parameters", &PythonPresetData::get_parameters);
+    
+    // Enums
     py::enum_<Role>(m, "Role")
         .value("UNKNOWN", Role::UNKNOWN)
         .value("PAD", Role::PAD)
         .value("BASS", Role::BASS)
         .value("LEAD", Role::LEAD)
-        .value("DRUM", Role::DRUM)
         .value("FX", Role::FX)
-        .export_values();
+        .value("TEXTURE", Role::TEXTURE)
+        .value("ARP", Role::ARP)
+        .value("DRONE", Role::DRONE)
+        .value("RHYTHM", Role::RHYTHM)
+        .value("BELL", Role::BELL)
+        .value("CHORD", Role::CHORD)
+        .value("PLUCK", Role::PLUCK);
     
-    // Module-level functions
-    m.def("get_version", []() { return "1.0.0"; }, "Get version string");
-    m.def("get_sample_rate", []() { return 44100; }, "Get default sample rate");
+    // Utility functions
+    m.def("create_preset_data", [](const std::string& name, const std::string& category,
+                                  const std::string& description, const py::dict& parameters) {
+        return std::make_unique<PythonPresetData>(name, category, description, parameters);
+    }, "Create preset data object");
+    
+    m.def("get_version", []() {
+        return "1.0.0";
+    }, "Get library version");
 }
