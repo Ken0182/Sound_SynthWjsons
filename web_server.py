@@ -13,15 +13,27 @@ from flask import Flask, jsonify, request, render_template, send_from_directory
 from flask_cors import CORS
 import threading
 import time
+import numpy as np
+import base64
+import io
 
 # Import our audio interface
 from audio_interface import AudioInterface, AudioEngine
 
+# Import C++ engine adapter
+try:
+    from cpp_engine import CPPAudioEngineAdapter
+    CPP_ENGINE_AVAILABLE = True
+except ImportError:
+    CPP_ENGINE_AVAILABLE = False
+    print("Warning: C++ engine not available, using Python fallback")
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for web interface
 
-# Global audio interface
+# Global audio interface and C++ engine
 audio_interface: Optional[AudioInterface] = None
+cpp_engine: Optional['CPPAudioEngineAdapter'] = None
 
 @app.route('/')
 def index():
@@ -158,7 +170,7 @@ def serve_static(filename):
 
 def initialize_audio_interface(json_files: List[str], engine: Optional[AudioEngine] = None):
     """Initialize the audio interface with JSON datasets"""
-    global audio_interface
+    global audio_interface, cpp_engine
     
     print(f"Initializing audio interface with files: {json_files}")
     audio_interface = AudioInterface(engine)
@@ -166,6 +178,17 @@ def initialize_audio_interface(json_files: List[str], engine: Optional[AudioEngi
     # Load JSON datasets
     loaded_count = audio_interface.load_json_datasets(json_files)
     print(f"Loaded {loaded_count} presets")
+    
+    # Initialize C++ engine if available
+    if CPP_ENGINE_AVAILABLE:
+        try:
+            cpp_engine = CPPAudioEngineAdapter(fallback_to_python=True)
+            print("C++ audio engine initialized successfully")
+        except Exception as e:
+            print(f"Failed to initialize C++ engine: {e}")
+            print("Falling back to Python-only mode")
+    else:
+        print("C++ engine not available, using Python-only mode")
     
     return loaded_count
 
