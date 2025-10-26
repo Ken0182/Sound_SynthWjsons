@@ -5,11 +5,15 @@
 PROJECT_NAME = aiaudio_generator
 CXX = g++
 PYTHON = python3
+PIP = pip3
 CMAKE = cmake
 MAKE = make
 
 # Directories
 BUILD_DIR = build
+# Optional: use CMake presets, e.g., BUILD_PRESET=msys2-mingw
+BUILD_PRESET ?=
+BUILD_TYPE ?= Release
 SRC_DIR = src
 INCLUDE_DIR = include
 WEB_DIR = web
@@ -33,13 +37,17 @@ all: build-cpp build-python build-web
 
 # C++ Build targets
 .PHONY: build-cpp
-build-cpp: $(BUILD_DIR)/$(PROJECT_NAME)
+build-cpp:
+ifeq ($(strip $(BUILD_PRESET)),)
+	$(CMAKE) -S . -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON
+	$(CMAKE) --build $(BUILD_DIR) --config $(BUILD_TYPE) -j
+else
+	$(CMAKE) --preset $(BUILD_PRESET)
+	$(CMAKE) --build --preset $(BUILD_PRESET) --config $(BUILD_TYPE) -j
+endif
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
-
-$(BUILD_DIR)/$(PROJECT_NAME): $(BUILD_DIR)
-	cd $(BUILD_DIR) && $(CMAKE) .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON && $(MAKE)
 
 # Python build and setup
 .PHONY: build-python
@@ -47,8 +55,8 @@ build-python: install-python-deps
 
 .PHONY: install-python-deps
 install-python-deps:
-	pip3 install --upgrade pip
-	pip3 install -r $(PYTHON_DEPS)
+	$(PIP) install --upgrade pip
+	$(PIP) install -r $(PYTHON_DEPS)
 
 # Web interface build
 .PHONY: build-web
@@ -103,9 +111,10 @@ serve-dev: build-python
 
 # Distribution targets
 .PHONY: dist
+
 dist: clean all
 	mkdir -p $(DIST_DIR)
-	cp -r $(BUILD_DIR)/$(PROJECT_NAME) $(DIST_DIR)/
+	cp -r $(BUILD_DIR)/src/$(PROJECT_NAME) $(DIST_DIR)/ 2>/dev/null || true
 	cp -r $(WEB_DIR)/dist/* $(DIST_DIR)/ 2>/dev/null || true
 	cp *.py $(DIST_DIR)/
 	cp *.json $(DIST_DIR)/
@@ -114,8 +123,8 @@ dist: clean all
 # Installation targets
 .PHONY: install
 install: dist
-	sudo cp $(DIST_DIR)/$(PROJECT_NAME) /usr/local/bin/
-	sudo chmod +x /usr/local/bin/$(PROJECT_NAME)
+	@echo "Installing binary to /usr/local/bin requires privileges."
+	@echo "Run manually if desired: sudo cp $(DIST_DIR)/$(PROJECT_NAME) /usr/local/bin/ && sudo chmod +x /usr/local/bin/$(PROJECT_NAME)"
 
 .PHONY: install-web
 install-web: build-web
@@ -155,7 +164,7 @@ install-system-deps:
 
 .PHONY: install-web-deps
 install-web-deps: $(WEB_DIR)/package.json
-	cd $(WEB_DIR) && npm install
+	cd $(WEB_DIR) && npm install --no-audit --no-fund || true
 
 # Help target
 .PHONY: help
@@ -164,7 +173,7 @@ help:
 	@echo ""
 	@echo "Build Targets:"
 	@echo "  all          - Build everything (C++, Python, Web)"
-	@echo "  build-cpp    - Build C++ audio engine"
+	@echo "  build-cpp    - Build C++ (uses CMake; supports BUILD_PRESET and BUILD_TYPE)"
 	@echo "  build-python - Install Python dependencies"
 	@echo "  build-web    - Build web interface"
 	@echo ""
@@ -184,8 +193,8 @@ help:
 	@echo "  test-cpp     - Run C++ tests"
 	@echo ""
 	@echo "Installation:"
-	@echo "  install-deps - Install all system dependencies"
-	@echo "  install      - Install application"
+	@echo "  install-deps - Echo system dependency guidance (see docs/build/msys2_notes.md)"
+	@echo "  install      - Prepare dist; prints manual install instructions"
 	@echo "  install-web  - Install web interface"
 	@echo ""
 	@echo "Cleanup:"
@@ -196,6 +205,10 @@ help:
 	@echo ""
 	@echo "Distribution:"
 	@echo "  dist         - Create distribution package"
+	@echo ""
+	@echo "Variables:"
+	@echo "  BUILD_PRESET - Use a CMake preset (e.g., msys2-mingw)"
+	@echo "  BUILD_TYPE   - Release/Debug (default Release)"
 
 # Quick start for development
 .PHONY: quickstart
