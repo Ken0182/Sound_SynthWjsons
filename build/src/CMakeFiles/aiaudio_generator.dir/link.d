@@ -6,7 +6,6 @@ aiaudio_generator: \
   libaiaudio_core.a \
   /usr/lib/x86_64-linux-gnu/libjsoncpp.so.1.9.6 \
   /lib/x86_64-linux-gnu/libyaml-cpp.so \
-  /lib/x86_64-linux-gnu/libpthread.a \
   /lib/x86_64-linux-gnu/libm.so \
   /lib/x86_64-linux-gnu/libm.so \
   /lib/x86_64-linux-gnu/libm.so \
@@ -53,8 +52,6 @@ libaiaudio_core.a:
 /usr/lib/x86_64-linux-gnu/libjsoncpp.so.1.9.6:
 
 /lib/x86_64-linux-gnu/libyaml-cpp.so:
-
-/lib/x86_64-linux-gnu/libpthread.a:
 
 /lib/x86_64-linux-gnu/libm.so:
 
