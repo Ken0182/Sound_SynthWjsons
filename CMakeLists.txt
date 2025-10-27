@@ -16,14 +16,8 @@ else()
 endif()
 
 # Find jsoncpp
-find_package(jsoncpp REQUIRED)
-if(jsoncpp_FOUND)
-    set(JSONCPP_LIBRARIES jsoncpp_lib)
-    set(JSONCPP_INCLUDE_DIRS ${jsoncpp_INCLUDE_DIRS})
-else()
-    # Fallback to pkg-config
-    pkg_check_modules(JSONCPP REQUIRED jsoncpp)
-endif()
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(JSONCPP REQUIRED jsoncpp)
 
 # Include directories
 include_directories(include)
@@ -49,9 +43,8 @@ if(NOT MSVC)
 endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
 
-# Link libraries
+# Link libraries (JSON library is linked in src/CMakeLists.txt)
 target_link_libraries(aiaudio_generator 
-    ${JSONCPP_LIBRARIES}
     ${YAMLCPP_LIBRARIES}
     Threads::Threads
 )

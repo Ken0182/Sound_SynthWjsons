@@ -1,0 +1,129 @@
+# AI Audio Generator Metrics Configuration
+
+# Role-specific thresholds
+roles:
+  pad:
+    thresholds:
+      semantic_match: 0.7
+      mix_readiness: 0.8
+      perceptual_quality: 0.75
+      stability: 0.9
+      preference_win: 0.65
+    constraints:
+      lufs_target: -18.0
+      true_peak_limit: -1.0
+      crest_factor_min: 6.0
+      crest_factor_max: 14.0
+      max_cpu: 0.8
+      max_latency: 10.0
+
+  bass:
+    thresholds:
+      semantic_match: 0.6
+      mix_readiness: 0.9
+      perceptual_quality: 0.8
+      stability: 0.95
+      preference_win: 0.7
+    constraints:
+      lufs_target: -16.0
+      true_peak_limit: -1.0
+      crest_factor_min: 8.0
+      crest_factor_max: 12.0
+      max_cpu: 0.6
+      max_latency: 5.0
+
+  lead:
+    thresholds:
+      semantic_match: 0.8
+      mix_readiness: 0.7
+      perceptual_quality: 0.85
+      stability: 0.9
+      preference_win: 0.75
+    constraints:
+      lufs_target: -17.0
+      true_peak_limit: -1.0
+      crest_factor_min: 6.0
+      crest_factor_max: 14.0
+      max_cpu: 0.7
+      max_latency: 8.0
+
+  drum:
+    thresholds:
+      semantic_match: 0.5
+      mix_readiness: 0.95
+      perceptual_quality: 0.7
+      stability: 0.98
+      preference_win: 0.8
+    constraints:
+      lufs_target: -14.0
+      true_peak_limit: -0.5
+      crest_factor_min: 10.0
+      crest_factor_max: 16.0
+      max_cpu: 0.5
+      max_latency: 3.0
+
+  percussion:
+    thresholds:
+      semantic_match: 0.4
+      mix_readiness: 0.9
+      perceptual_quality: 0.6
+      stability: 0.95
+      preference_win: 0.7
+    constraints:
+      lufs_target: -15.0
+      true_peak_limit: -0.5
+      crest_factor_min: 8.0
+      crest_factor_max: 14.0
+      max_cpu: 0.4
+      max_latency: 2.0
+
+  ambient:
+    thresholds:
+      semantic_match: 0.9
+      mix_readiness: 0.6
+      perceptual_quality: 0.9
+      stability: 0.85
+      preference_win: 0.8
+    constraints:
+      lufs_target: -20.0
+      true_peak_limit: -1.0
+      crest_factor_min: 4.0
+      crest_factor_max: 12.0
+      max_cpu: 0.9
+      max_latency: 15.0
+
+  texture:
+    thresholds:
+      semantic_match: 0.7
+      mix_readiness: 0.5
+      perceptual_quality: 0.8
+      stability: 0.8
+      preference_win: 0.6
+    constraints:
+      lufs_target: -22.0
+      true_peak_limit: -1.0
+      crest_factor_min: 2.0
+      crest_factor_max: 10.0
+      max_cpu: 0.8
+      max_latency: 12.0
+
+# Global settings
+global:
+  objective_weights:
+    semantic_match: 0.3
+    mix_readiness: 0.25
+    perceptual_quality: 0.25
+    stability: 0.1
+    preference_win: 0.1
+  
+  optimization:
+    pareto_epsilon: 0.1
+    hypervolume_reference: [0.0, 0.0, 0.0, 0.0, 0.0]
+    max_iterations: 1000
+    convergence_threshold: 1e-6
+  
+  safety:
+    max_feedback_gain: 0.99
+    min_stability_margin: 0.1
+    max_dc_offset: -80.0
+    min_signal_level: -60.0
