@@ -3,6 +3,7 @@
 #include "core_types.h"
 #include <variant>
 #include <unordered_map>
+#include <unordered_set>
 #include <memory>
 #include <string>
 #include <vector>
@@ -11,13 +12,7 @@
 namespace aiaudio {
 
 // DSP Intermediate Representation (IR) System
-
-// Strong typing for units
-struct Hz { double value; };
-struct dB { double value; };
-struct Seconds { double value; };
-struct Percent { double value; };
-struct Ratio { double value; };
+// Note: Unit types (Hz, dB, Seconds, Percent, Ratio) are defined in core_types.h
 
 // Ranged parameters with validation
 template<typename T>
@@ -93,9 +88,9 @@ public:
     std::string getDescription() const override;
     
 private:
-    RangedParam<Hz> frequency_{440.0, 20.0, 20000.0, "frequency"};
-    RangedParam<Percent> amplitude_{0.5, 0.0, 1.0, "amplitude"};
-    RangedParam<Percent> phase_{0.0, 0.0, 1.0, "phase"};
+    RangedParam<double> frequency_;
+    RangedParam<double> amplitude_;
+    RangedParam<double> phase_;
     std::string waveType_ = "sine";
     double phaseAccumulator_ = 0.0;
     double sampleRate_ = 44100.0;
@@ -113,8 +108,8 @@ public:
     std::string getDescription() const override;
     
 private:
-    RangedParam<Hz> cutoff_{1000.0, 20.0, 20000.0, "cutoff"};
-    RangedParam<Ratio> resonance_{0.1, 0.0, 0.99, "resonance"};
+    RangedParam<double> cutoff_;
+    RangedParam<double> resonance_;
     std::string filterType_ = "lowpass";
     double x1_ = 0.0, x2_ = 0.0, y1_ = 0.0, y2_ = 0.0; // State variables
 };
@@ -131,10 +126,10 @@ public:
     std::string getDescription() const override;
     
 private:
-    RangedParam<Seconds> attack_{0.01, 0.001, 2.0, "attack"};
-    RangedParam<Seconds> decay_{0.1, 0.001, 2.0, "decay"};
-    RangedParam<Percent> sustain_{0.7, 0.0, 1.0, "sustain"};
-    RangedParam<Seconds> release_{0.5, 0.001, 5.0, "release"};
+    RangedParam<double> attack_;
+    RangedParam<double> decay_;
+    RangedParam<double> sustain_;
+    RangedParam<double> release_;
     
     enum class EnvState { ATTACK, DECAY, SUSTAIN, RELEASE, IDLE };
     EnvState state_ = EnvState::IDLE;
@@ -156,8 +151,8 @@ public:
     std::string getDescription() const override;
     
 private:
-    RangedParam<Hz> rate_{1.0, 0.01, 20.0, "rate"};
-    RangedParam<Percent> depth_{0.5, 0.0, 1.0, "depth"};
+    RangedParam<double> rate_;
+    RangedParam<double> depth_;
     std::string waveType_ = "sine";
     double phase_ = 0.0;
     double sampleRate_ = 44100.0;

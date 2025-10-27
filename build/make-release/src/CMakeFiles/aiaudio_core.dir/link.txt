@@ -1,0 +1,2 @@
+/usr/bin/ar qc libaiaudio_core.a CMakeFiles/aiaudio_core.dir/moo_optimization.cpp.o CMakeFiles/aiaudio_core.dir/dsp_ir.cpp.o CMakeFiles/aiaudio_core.dir/normalization.cpp.o CMakeFiles/aiaudio_core.dir/semantic_fusion.cpp.o CMakeFiles/aiaudio_core.dir/roles_policies.cpp.o CMakeFiles/aiaudio_core.dir/decision_heads.cpp.o CMakeFiles/aiaudio_core.dir/main_app.cpp.o CMakeFiles/aiaudio_core.dir/audio_safety.cpp.o
+/usr/bin/ranlib libaiaudio_core.a

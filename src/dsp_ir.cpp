@@ -4,14 +4,18 @@
 #include <queue>
 #include <sstream>
 #include <fstream>
-#include <json/json.h>
+#include <unordered_set>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 namespace aiaudio {
 
 // OscillatorStage implementation
-OscillatorStage::OscillatorStage() : frequency_(440.0, 20.0, 20000.0, "frequency"),
-                                    amplitude_(0.5, 0.0, 1.0, "amplitude"),
-                                    phase_(0.0, 0.0, 1.0, "phase") {
+OscillatorStage::OscillatorStage() 
+    : frequency_(440.0, 20.0, 20000.0, "frequency"),
+      amplitude_(0.5, 0.0, 1.0, "amplitude"),
+      phase_(0.0, 0.0, 1.0, "phase") {
 }
 
 void OscillatorStage::process(const AudioBuffer& input, AudioBuffer& output) {
@@ -79,8 +83,9 @@ std::string OscillatorStage::getDescription() const {
 }
 
 // FilterStage implementation
-FilterStage::FilterStage() : cutoff_(1000.0, 20.0, 20000.0, "cutoff"),
-                           resonance_(0.1, 0.0, 0.99, "resonance") {
+FilterStage::FilterStage() 
+    : cutoff_(1000.0, 20.0, 20000.0, "cutoff"),
+      resonance_(0.1, 0.0, 0.99, "resonance") {
 }
 
 void FilterStage::process(const AudioBuffer& input, AudioBuffer& output) {
@@ -145,10 +150,11 @@ std::string FilterStage::getDescription() const {
 }
 
 // EnvelopeStage implementation
-EnvelopeStage::EnvelopeStage() : attack_(0.01, 0.001, 2.0, "attack"),
-                                decay_(0.1, 0.001, 2.0, "decay"),
-                                sustain_(0.7, 0.0, 1.0, "sustain"),
-                                release_(0.5, 0.001, 5.0, "release") {
+EnvelopeStage::EnvelopeStage() 
+    : attack_(0.01, 0.001, 2.0, "attack"),
+      decay_(0.1, 0.001, 2.0, "decay"),
+      sustain_(0.7, 0.0, 1.0, "sustain"),
+      release_(0.5, 0.001, 5.0, "release") {
 }
 
 void EnvelopeStage::process(const AudioBuffer& input, AudioBuffer& output) {
@@ -254,8 +260,9 @@ std::string EnvelopeStage::getDescription() const {
 }
 
 // LFOStage implementation
-LFOStage::LFOStage() : rate_(1.0, 0.01, 20.0, "rate"),
-                      depth_(0.5, 0.0, 1.0, "depth") {
+LFOStage::LFOStage() 
+    : rate_(1.0, 0.01, 20.0, "rate"),
+      depth_(0.5, 0.0, 1.0, "depth") {
 }
 
 void LFOStage::process(const AudioBuffer& input, AudioBuffer& output) {
@@ -561,58 +568,77 @@ void DSPGraph::topologicalSortDFS(const std::string& node,
 std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     auto graph = std::make_unique<DSPGraph>();
     
-    Json::Value root;
-    Json::Reader reader;
-    
-    if (!reader.parse(jsonData, root)) {
-        throw AIAudioException("Failed to parse JSON: " + reader.getFormattedErrorMessages());
-    }
-    
-    // Parse stages
-    if (root.isMember("stages")) {
-        const auto& stages = root["stages"];
-        for (const auto& stageName : stages.getMemberNames()) {
-            const auto& stageData = stages[stageName];
-            std::string type = stageData["type"].asString();
-            
-            ParamMap params;
-            if (stageData.isMember("parameters")) {
-                const auto& paramData = stageData["parameters"];
-                for (const auto& paramName : paramData.getMemberNames()) {
-                    const auto& paramValue = paramData[paramName];
-                    if (paramValue.isDouble()) {
-                        params[paramName] = paramValue.asDouble();
-                    } else if (paramValue.isString()) {
-                        params[paramName] = paramValue.asString();
-                    } else if (paramValue.isBool()) {
-                        params[paramName] = paramValue.asBool();
+    try {
+        json root = json::parse(jsonData);
+        
+        // Parse stages
+        if (root.contains("stages") && root["stages"].is_object()) {
+            const auto& stages = root["stages"];
+            for (auto it = stages.begin(); it != stages.end(); ++it) {
+                const std::string& stageName = it.key();
+                const auto& stageData = it.value();
+                
+                if (!stageData.contains("type")) {
+                    throw AIAudioException("Stage " + stageName + " missing type field");
+                }
+                
+                std::string type = stageData["type"].get<std::string>();
+                
+                ParamMap params;
+                if (stageData.contains("parameters") && stageData["parameters"].is_object()) {
+                    const auto& paramData = stageData["parameters"];
+                    for (auto paramIt = paramData.begin(); paramIt != paramData.end(); ++paramIt) {
+                        const std::string& paramName = paramIt.key();
+                        const auto& paramValue = paramIt.value();
+                        
+                        if (paramValue.is_number_float()) {
+                            params[paramName] = paramValue.get<double>();
+                        } else if (paramValue.is_number_integer()) {
+                            params[paramName] = static_cast<double>(paramValue.get<int>());
+                        } else if (paramValue.is_string()) {
+                            params[paramName] = paramValue.get<std::string>();
+                        } else if (paramValue.is_boolean()) {
+                            params[paramName] = paramValue.get<bool>();
+                        }
                     }
                 }
+                
+                auto stage = createStageFromJSON(type, params);
+                graph->addStage(stageName, std::move(stage));
             }
-            
-            auto stage = createStageFromJSON(type, params);
-            graph->addStage(stageName, std::move(stage));
         }
-    }
-    
-    // Parse connections
-    if (root.isMember("connections")) {
-        const auto& connections = root["connections"];
-        for (const auto& conn : connections) {
-            Connection connection;
-            connection.source = conn["source"].asString();
-            connection.destination = conn["destination"].asString();
-            if (conn.isMember("parameter")) {
-                connection.parameter = conn["parameter"].asString();
+        
+        // Parse connections
+        if (root.contains("connections") && root["connections"].is_array()) {
+            const auto& connections = root["connections"];
+            for (const auto& conn : connections) {
+                Connection connection;
+                
+                if (!conn.contains("source") || !conn.contains("destination")) {
+                    throw AIAudioException("Connection missing source or destination");
+                }
+                
+                connection.source = conn["source"].get<std::string>();
+                connection.destination = conn["destination"].get<std::string>();
+                
+                if (conn.contains("parameter")) {
+                    connection.parameter = conn["parameter"].get<std::string>();
+                }
+                if (conn.contains("amount")) {
+                    connection.amount = conn["amount"].get<double>();
+                }
+                if (conn.contains("enabled")) {
+                    connection.enabled = conn["enabled"].get<bool>();
+                }
+                
+                graph->addConnection(connection);
             }
-            if (conn.isMember("amount")) {
-                connection.amount = conn["amount"].asDouble();
-            }
-            if (conn.isMember("enabled")) {
-                connection.enabled = conn["enabled"].asBool();
-            }
-            graph->addConnection(connection);
         }
+        
+    } catch (const json::parse_error& e) {
+        throw AIAudioException("Failed to parse JSON: " + std::string(e.what()));
+    } catch (const json::type_error& e) {
+        throw AIAudioException("JSON type error: " + std::string(e.what()));
     }
     
     return graph;

@@ -43,35 +43,71 @@ A research-grade, production-minded, over-engineered AI audio generation system 
 
 ## Building
 
-### Prerequisites
-
-- C++20 compatible compiler (GCC 10+, Clang 12+, MSVC 2019+)
-- CMake 3.20+
-- OpenCV 4.x
-- nlohmann/json
-- yaml-cpp
-
-### Build Instructions
+### Quick Start
 
 ```bash
-mkdir build
-cd build
-cmake ..
-make -j$(nproc)
+# Linux/macOS with Ninja
+cmake --preset ninja-release
+cmake --build build/ninja-release
+
+# Windows MSYS2/MinGW
+cmake --preset mingw-release
+cmake --build build/mingw-release
+
+# Windows MSVC
+cmake --preset msvc-release
+cmake --build build/msvc-release
 ```
+
+### Detailed Build Instructions
+
+For comprehensive build instructions including:
+- **Windows (MSYS2/MinGW32, MSVC)**
+- **Linux (Ubuntu, Fedora, Arch)**  
+- **macOS (Homebrew)**
+- **Troubleshooting**
+- **IDE Integration**
+
+See **[BUILD.md](BUILD.md)** for complete details.
+
+### Prerequisites
+
+**Required:**
+- C++20 compatible compiler (GCC 10+, Clang 12+, MSVC 2019+, MinGW-w64 GCC 10+)
+- CMake 3.20+
+- nlohmann/json 3.2.0+
+
+**Optional:**
+- OpenCV 4.x (vision features)
+- Google Test (unit tests)
 
 ### Dependencies
 
 ```bash
 # Ubuntu/Debian
-sudo apt-get install libopencv-dev nlohmann-json3-dev libyaml-cpp-dev
+sudo apt-get install cmake ninja-build nlohmann-json3-dev
 
 # macOS
-brew install opencv nlohmann-json yaml-cpp
+brew install cmake ninja nlohmann-json
 
-# Windows (vcpkg)
-vcpkg install opencv nlohmann-json yaml-cpp
+# Windows MSYS2 (MinGW 64-bit terminal)
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake \
+          mingw-w64-x86_64-ninja mingw-w64-x86_64-nlohmann-json
+
+# Windows vcpkg
+vcpkg install nlohmann-json:x64-windows
 ```
+
+### CMake Presets
+
+This project uses CMake presets for easy configuration:
+
+- `ninja-release` / `ninja-debug` - Ninja builds
+- `make-release` / `make-debug` - Makefile builds  
+- `mingw-release` / `mingw-debug` - Windows MinGW builds
+- `msvc-release` / `msvc-debug` - Visual Studio builds
+
+List all presets: `cmake --list-presets`
 
 ## Usage
 

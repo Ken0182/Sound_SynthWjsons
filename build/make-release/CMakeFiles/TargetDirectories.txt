@@ -1,0 +1,8 @@
+/workspace/build/make-release/CMakeFiles/edit_cache.dir
+/workspace/build/make-release/CMakeFiles/rebuild_cache.dir
+/workspace/build/make-release/src/CMakeFiles/aiaudio_core.dir
+/workspace/build/make-release/src/CMakeFiles/aiaudio_generator.dir
+/workspace/build/make-release/src/CMakeFiles/edit_cache.dir
+/workspace/build/make-release/src/CMakeFiles/rebuild_cache.dir
+/workspace/build/make-release/tests/CMakeFiles/edit_cache.dir
+/workspace/build/make-release/tests/CMakeFiles/rebuild_cache.dir

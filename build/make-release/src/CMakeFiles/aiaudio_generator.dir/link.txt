@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -Xlinker --dependency-file=CMakeFiles/aiaudio_generator.dir/link.d CMakeFiles/aiaudio_generator.dir/main.cpp.o -o aiaudio_generator  libaiaudio_core.a -lpthread -lm

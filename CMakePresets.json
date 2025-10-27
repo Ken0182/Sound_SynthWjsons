@@ -1,0 +1,172 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default Config",
+      "description": "Default build configuration",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "ninja-release",
+      "displayName": "Ninja Release",
+      "description": "Release build using Ninja generator",
+      "inherits": "default",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "Ninja Debug",
+      "description": "Debug build using Ninja generator",
+      "inherits": "default",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "make-release",
+      "displayName": "Make Release",
+      "description": "Release build using Unix Makefiles",
+      "inherits": "default",
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "make-debug",
+      "displayName": "Make Debug",
+      "description": "Debug build using Unix Makefiles",
+      "inherits": "default",
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "mingw-release",
+      "displayName": "MinGW Release (MSYS2)",
+      "description": "Release build for Windows MSYS2 MinGW",
+      "inherits": "default",
+      "generator": "MinGW Makefiles",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_C_COMPILER": "gcc"
+      }
+    },
+    {
+      "name": "mingw-debug",
+      "displayName": "MinGW Debug (MSYS2)",
+      "description": "Debug build for Windows MSYS2 MinGW",
+      "inherits": "default",
+      "generator": "MinGW Makefiles",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_C_COMPILER": "gcc"
+      }
+    },
+    {
+      "name": "msvc-release",
+      "displayName": "MSVC Release",
+      "description": "Release build using MSVC (Visual Studio)",
+      "inherits": "default",
+      "generator": "Visual Studio 17 2022",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "msvc-debug",
+      "displayName": "MSVC Debug",
+      "description": "Debug build using MSVC (Visual Studio)",
+      "inherits": "default",
+      "generator": "Visual Studio 17 2022",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "ninja-release",
+      "configurePreset": "ninja-release",
+      "displayName": "Build Ninja Release",
+      "description": "Build using Ninja Release configuration"
+    },
+    {
+      "name": "ninja-debug",
+      "configurePreset": "ninja-debug",
+      "displayName": "Build Ninja Debug",
+      "description": "Build using Ninja Debug configuration"
+    },
+    {
+      "name": "make-release",
+      "configurePreset": "make-release",
+      "displayName": "Build Make Release",
+      "description": "Build using Unix Makefiles Release configuration"
+    },
+    {
+      "name": "make-debug",
+      "configurePreset": "make-debug",
+      "displayName": "Build Make Debug",
+      "description": "Build using Unix Makefiles Debug configuration"
+    },
+    {
+      "name": "mingw-release",
+      "configurePreset": "mingw-release",
+      "displayName": "Build MinGW Release",
+      "description": "Build using MinGW Makefiles Release configuration"
+    },
+    {
+      "name": "mingw-debug",
+      "configurePreset": "mingw-debug",
+      "displayName": "Build MinGW Debug",
+      "description": "Build using MinGW Makefiles Debug configuration"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "ninja-release",
+      "configurePreset": "ninja-release",
+      "displayName": "Test Ninja Release",
+      "description": "Run tests for Ninja Release build"
+    },
+    {
+      "name": "make-release",
+      "configurePreset": "make-release",
+      "displayName": "Test Make Release",
+      "description": "Run tests for Make Release build"
+    },
+    {
+      "name": "mingw-release",
+      "configurePreset": "mingw-release",
+      "displayName": "Test MinGW Release",
+      "description": "Run tests for MinGW Release build"
+    }
+  ]
+}

@@ -62,16 +62,16 @@ public:
         if (buffer.empty()) return;
         
         // Find peak
-        double peak = 0.0;
-        for (double sample : buffer) {
+        Sample peak = 0.0f;
+        for (Sample sample : buffer) {
             peak = std::max(peak, std::abs(sample));
         }
         
-        if (peak > 0.0) {
+        if (peak > 0.0f) {
             double targetLinear = dbToLinear(targetLevel);
-            double gain = targetLinear / peak;
+            Sample gain = static_cast<Sample>(targetLinear / peak);
             
-            for (double& sample : buffer) {
+            for (Sample& sample : buffer) {
                 sample *= gain;
             }
         }
@@ -83,16 +83,16 @@ public:
         
         // Calculate RMS
         double sum = 0.0;
-        for (double sample : buffer) {
+        for (Sample sample : buffer) {
             sum += sample * sample;
         }
         double rms = std::sqrt(sum / buffer.size());
         
         if (rms > 0.0) {
             double targetLinear = dbToLinear(targetLevel);
-            double gain = targetLinear / rms;
+            Sample gain = static_cast<Sample>(targetLinear / rms);
             
-            for (double& sample : buffer) {
+            for (Sample& sample : buffer) {
                 sample *= gain;
             }
         }
@@ -209,7 +209,7 @@ public:
     };
     
     // Create snapshot of current state
-    Snapshot createSnapshot(const NormalizedPreset& preset) const;
+    Snapshot createSnapshot(const PresetNormalizer::NormalizedPreset& preset) const;
     
     // Compare snapshots
     bool compareSnapshots(const Snapshot& a, const Snapshot& b, double tolerance = 1e-6) const;
@@ -235,24 +235,24 @@ class MusicalNormalizer {
 public:
     // Tempo-based time normalization
     static Seconds tempoToTime(double beats, FrequencyHz tempo) {
-        return Seconds{beats * 60.0 / tempo.value};
+        return Seconds{beats * 60.0 / tempo};
     }
     
     // Time to tempo-based beats
     static double timeToTempo(Seconds time, FrequencyHz tempo) {
-        return time.value * tempo.value / 60.0;
+        return time.value * tempo / 60.0;
     }
     
     // Musical division snapping
     static double snapToMusicalDivision(double time, FrequencyHz tempo, double division) {
-        double beatTime = 60.0 / tempo.value;
+        double beatTime = 60.0 / tempo;
         double divisionTime = beatTime / division;
         return std::round(time / divisionTime) * divisionTime;
     }
     
     // Key-aware pitch shifting
     static Hz shiftPitchInKey(Hz originalFreq, int semitones, int key, const std::string& scale) {
-        int midiNote = freqToMidi(originalFreq);
+        int midiNote = Normalizer::freqToMidi(originalFreq);
         int shiftedMidi = midiNote + semitones;
         
         // Ensure note is in key/scale

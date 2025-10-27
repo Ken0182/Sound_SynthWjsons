@@ -1,0 +1,56 @@
+[
+{
+  "directory": "/workspace/build/make-release/src",
+  "command": "/usr/bin/c++ -DHAVE_OPENCV=0 -I/workspace/include -I/workspace/third_party -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -O3 -ffast-math -o CMakeFiles/aiaudio_core.dir/moo_optimization.cpp.o -c /workspace/src/moo_optimization.cpp",
+  "file": "/workspace/src/moo_optimization.cpp",
+  "output": "src/CMakeFiles/aiaudio_core.dir/moo_optimization.cpp.o"
+},
+{
+  "directory": "/workspace/build/make-release/src",
+  "command": "/usr/bin/c++ -DHAVE_OPENCV=0 -I/workspace/include -I/workspace/third_party -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -O3 -ffast-math -o CMakeFiles/aiaudio_core.dir/dsp_ir.cpp.o -c /workspace/src/dsp_ir.cpp",
+  "file": "/workspace/src/dsp_ir.cpp",
+  "output": "src/CMakeFiles/aiaudio_core.dir/dsp_ir.cpp.o"
+},
+{
+  "directory": "/workspace/build/make-release/src",
+  "command": "/usr/bin/c++ -DHAVE_OPENCV=0 -I/workspace/include -I/workspace/third_party -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -O3 -ffast-math -o CMakeFiles/aiaudio_core.dir/normalization.cpp.o -c /workspace/src/normalization.cpp",
+  "file": "/workspace/src/normalization.cpp",
+  "output": "src/CMakeFiles/aiaudio_core.dir/normalization.cpp.o"
+},
+{
+  "directory": "/workspace/build/make-release/src",
+  "command": "/usr/bin/c++ -DHAVE_OPENCV=0 -I/workspace/include -I/workspace/third_party -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -O3 -ffast-math -o CMakeFiles/aiaudio_core.dir/semantic_fusion.cpp.o -c /workspace/src/semantic_fusion.cpp",
+  "file": "/workspace/src/semantic_fusion.cpp",
+  "output": "src/CMakeFiles/aiaudio_core.dir/semantic_fusion.cpp.o"
+},
+{
+  "directory": "/workspace/build/make-release/src",
+  "command": "/usr/bin/c++ -DHAVE_OPENCV=0 -I/workspace/include -I/workspace/third_party -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -O3 -ffast-math -o CMakeFiles/aiaudio_core.dir/roles_policies.cpp.o -c /workspace/src/roles_policies.cpp",
+  "file": "/workspace/src/roles_policies.cpp",
+  "output": "src/CMakeFiles/aiaudio_core.dir/roles_policies.cpp.o"
+},
+{
+  "directory": "/workspace/build/make-release/src",
+  "command": "/usr/bin/c++ -DHAVE_OPENCV=0 -I/workspace/include -I/workspace/third_party -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -O3 -ffast-math -o CMakeFiles/aiaudio_core.dir/decision_heads.cpp.o -c /workspace/src/decision_heads.cpp",
+  "file": "/workspace/src/decision_heads.cpp",
+  "output": "src/CMakeFiles/aiaudio_core.dir/decision_heads.cpp.o"
+},
+{
+  "directory": "/workspace/build/make-release/src",
+  "command": "/usr/bin/c++ -DHAVE_OPENCV=0 -I/workspace/include -I/workspace/third_party -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -O3 -ffast-math -o CMakeFiles/aiaudio_core.dir/main_app.cpp.o -c /workspace/src/main_app.cpp",
+  "file": "/workspace/src/main_app.cpp",
+  "output": "src/CMakeFiles/aiaudio_core.dir/main_app.cpp.o"
+},
+{
+  "directory": "/workspace/build/make-release/src",
+  "command": "/usr/bin/c++ -DHAVE_OPENCV=0 -I/workspace/include -I/workspace/third_party -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -O3 -ffast-math -o CMakeFiles/aiaudio_core.dir/audio_safety.cpp.o -c /workspace/src/audio_safety.cpp",
+  "file": "/workspace/src/audio_safety.cpp",
+  "output": "src/CMakeFiles/aiaudio_core.dir/audio_safety.cpp.o"
+},
+{
+  "directory": "/workspace/build/make-release/src",
+  "command": "/usr/bin/c++ -DHAVE_OPENCV=0 -I/workspace/include -I/workspace/third_party -O3 -DNDEBUG -std=c++20 -o CMakeFiles/aiaudio_generator.dir/main.cpp.o -c /workspace/src/main.cpp",
+  "file": "/workspace/src/main.cpp",
+  "output": "src/CMakeFiles/aiaudio_generator.dir/main.cpp.o"
+}
+]
