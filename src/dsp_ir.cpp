@@ -575,15 +575,18 @@ std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     }
     
     // Parse stages
-    if (root.isMember(std::string("stages"))) {
-        const auto& stages = root[std::string("stages")];
+    const std::string stages_key = "stages";
+    if (root.isMember(stages_key)) {
+        const auto& stages = root[stages_key];
         for (const auto& stageName : stages.getMemberNames()) {
             const auto& stageData = stages[stageName];
-            std::string type = stageData[std::string("type")].asString();
+            const std::string type_key = "type";
+            std::string type = stageData[type_key].asString();
             
             ParamMap params;
-            if (stageData.isMember(std::string("parameters"))) {
-                const auto& paramData = stageData[std::string("parameters")];
+            const std::string parameters_key = "parameters";
+            if (stageData.isMember(parameters_key)) {
+                const auto& paramData = stageData[parameters_key];
                 for (const auto& paramName : paramData.getMemberNames()) {
                     const auto& paramValue = paramData[paramName];
                     if (paramValue.isDouble()) {
@@ -602,20 +605,26 @@ std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     }
     
     // Parse connections
-    if (root.isMember(std::string("connections"))) {
-        const auto& connections = root[std::string("connections")];
+    const std::string connections_key = "connections";
+    if (root.isMember(connections_key)) {
+        const auto& connections = root[connections_key];
         for (const auto& conn : connections) {
             Connection connection;
-            connection.source = conn[std::string("source")].asString();
-            connection.destination = conn[std::string("destination")].asString();
-            if (conn.isMember(std::string("parameter"))) {
-                connection.parameter = conn[std::string("parameter")].asString();
+            const std::string source_key = "source";
+            const std::string destination_key = "destination";
+            connection.source = conn[source_key].asString();
+            connection.destination = conn[destination_key].asString();
+            const std::string parameter_key = "parameter";
+            if (conn.isMember(parameter_key)) {
+                connection.parameter = conn[parameter_key].asString();
             }
-            if (conn.isMember(std::string("amount"))) {
-                connection.amount = conn[std::string("amount")].asDouble();
+            const std::string amount_key = "amount";
+            if (conn.isMember(amount_key)) {
+                connection.amount = conn[amount_key].asDouble();
             }
-            if (conn.isMember(std::string("enabled"))) {
-                connection.enabled = conn[std::string("enabled")].asBool();
+            const std::string enabled_key = "enabled";
+            if (conn.isMember(enabled_key)) {
+                connection.enabled = conn[enabled_key].asBool();
             }
             graph->addConnection(connection);
         }
