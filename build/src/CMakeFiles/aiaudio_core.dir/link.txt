@@ -1,0 +1,2 @@
+/usr/bin/ar qc libaiaudio_core.a CMakeFiles/aiaudio_core.dir/core_types.cpp.o CMakeFiles/aiaudio_core.dir/dsp_ir.cpp.o
+/usr/bin/ranlib libaiaudio_core.a

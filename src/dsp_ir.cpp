@@ -4,7 +4,7 @@
 #include <queue>
 #include <sstream>
 #include <fstream>
-#include <json/json.h>
+#include "simple_json.h"
 
 namespace aiaudio {
 
@@ -561,8 +561,8 @@ void DSPGraph::topologicalSortDFS(const std::string& node,
 std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     auto graph = std::make_unique<DSPGraph>();
     
-    Json::Value root;
-    Json::Reader reader;
+    simple_json::Value root;
+    simple_json::Reader reader;
     
     if (!reader.parse(jsonData, root)) {
         throw AIAudioException("Failed to parse JSON: " + reader.getFormattedErrorMessages());
@@ -580,7 +580,7 @@ std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
                 const auto& paramData = stageData["parameters"];
                 for (const auto& paramName : paramData.getMemberNames()) {
                     const auto& paramValue = paramData[paramName];
-                    if (paramValue.isDouble()) {
+                    if (paramValue.isNumber()) {
                         params[paramName] = paramValue.asDouble();
                     } else if (paramValue.isString()) {
                         params[paramName] = paramValue.asString();
@@ -598,7 +598,8 @@ std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     // Parse connections
     if (root.isMember("connections")) {
         const auto& connections = root["connections"];
-        for (const auto& conn : connections) {
+        for (size_t i = 0; i < connections.size(); ++i) {
+            const auto& conn = connections[i];
             Connection connection;
             connection.source = conn["source"].asString();
             connection.destination = conn["destination"].asString();

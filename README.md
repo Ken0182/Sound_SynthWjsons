@@ -1,268 +1,290 @@
-# AI Audio Generator
+# AI Audio Generator - Modern C++ Implementation
 
-A research-grade, production-minded, over-engineered AI audio generation system built in C++. This system implements a comprehensive 20-step blueprint for AI data-reader / sound-outputter with advanced features including multi-objective optimization, semantic fusion, policy-driven generation, and real-time audio processing.
+A comprehensive AI-controlled audio synthesizer built in modern C++ with a focus on cross-platform compatibility and stable builds.
 
-## Features
+## 🎯 Project Goals
 
-### Core Components
+This project recreates the AI-controlled audio synthesizer with the following objectives:
 
-1. **Multi-Objective Optimization (MOO)** - Pareto dominance-based optimization with objective vectors
-2. **JSON to Typed DSP IR** - Strongly-typed intermediate representation with BNF grammar
-3. **Canonical Normalization** - Perceptual mappings and musical context normalization
-4. **Semantic Fusion** - Query + tags + descriptions with contrastive learning
-5. **Roles & Policy Language** - YAML-based constraint system with role-specific policies
-6. **Decision Heads** - MLP-based parameter and routing decisions
-7. **Audio Safety** - Headroom management and anti-chaos systems
-8. **Real-time Processing** - Low-latency audio generation with CPU budget management
+1. **Stable Build Pipeline** - Works cleanly on Windows (MSYS2 MinGW32), macOS, and Linux
+2. **Modern C++** - Uses C++20 features and best practices
+3. **Minimal Dependencies** - Self-contained with bundled JSON parser
+4. **Cross-Platform** - CMake presets for different platforms and compilers
+5. **Production Ready** - Comprehensive error handling and validation
 
-### Advanced Features
-
-- **Theory-Aware Constraints** - Tempo/key/scale-aware parameter adjustment
-- **A/B Testing & Active Learning** - Bandit algorithms for continuous improvement
-- **Full Traceability** - Complete reproducibility with trace provenance
-- **Progressive Disclosure** - Basic to expert mode with guarded access
-- **Continual Learning** - Trust-region updates for model improvement
-- **Feature Flags** - Rollout control and kill switches
-- **100% Good Feedback Engine** - Comprehensive feedback collection and analysis
-
-## Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Semantic      │    │   Decision      │    │   DSP Graph     │
-│   Fusion        │───▶│   Heads         │───▶│   Processing    │
-│   Engine        │    │   (MLP)         │    │   (IR)          │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Policy        │    │   MOO           │    │   Audio         │
-│   Manager       │    │   Optimizer     │    │   Renderer      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-## Building
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- C++20 compatible compiler (GCC 10+, Clang 12+, MSVC 2019+)
-- CMake 3.20+
-- OpenCV 4.x
-- nlohmann/json
-- yaml-cpp
+- **C++20 Compiler** (GCC 10+, Clang 12+, or MSVC 2019+)
+- **CMake 3.20+**
+- **Make** or **Ninja** (optional)
 
-### Build Instructions
+### Build and Run
 
 ```bash
-mkdir build
-cd build
-cmake ..
+# Clone and navigate to the project
+git clone <repository-url>
+cd ai-audio-generator
+
+# Build and run (Linux/macOS)
+./build_and_run.sh
+
+# Or manually:
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
+./src/aiaudio_generator
 ```
 
-### Dependencies
+### Windows (MSYS2 MinGW)
 
 ```bash
-# Ubuntu/Debian
-sudo apt-get install libopencv-dev nlohmann-json3-dev libyaml-cpp-dev
+# In MSYS2 terminal
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-make
 
-# macOS
-brew install opencv nlohmann-json yaml-cpp
-
-# Windows (vcpkg)
-vcpkg install opencv nlohmann-json yaml-cpp
+# Build
+mkdir build && cd build
+cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
+./src/aiaudio_generator.exe
 ```
 
-## Usage
+## 🏗️ Build System
 
-### Basic Usage
+### CMake Presets
+
+The project includes CMake presets for different platforms:
+
+```bash
+# List available presets
+cmake --list-presets
+
+# Configure with specific preset
+cmake --preset=msys2-mingw
+cmake --preset=ninja
+cmake --preset=debug
+
+# Build with preset
+cmake --build --preset=default
+```
+
+### Available Presets
+
+- `default` - Standard Unix Makefiles build
+- `debug` - Debug build with symbols
+- `ninja` - Ninja generator for faster builds
+- `msys2-mingw` - MSYS2 MinGW on Windows
+
+### Build Types
+
+- **Release** (default) - Optimized for performance
+- **Debug** - Includes debug symbols and assertions
+
+## 📁 Project Structure
+
+```
+├── CMakeLists.txt          # Main CMake configuration
+├── CMakePresets.json       # CMake presets for different platforms
+├── build_and_run.sh        # Quick build and test script
+├── include/                # Header files
+│   ├── core_types.h        # Core type definitions
+│   ├── dsp_ir.h           # DSP intermediate representation
+│   ├── simple_json.h      # Bundled JSON parser
+│   └── ...
+├── src/                   # Source files
+│   ├── core_types.cpp     # Core type implementations
+│   ├── dsp_ir.cpp        # DSP IR implementation
+│   ├── main.cpp          # Main application
+│   └── ...
+├── tests/                 # Test suite (when GTest is available)
+└── config/               # Configuration files
+    ├── metrics.yaml      # Metrics configuration
+    └── roles.yaml        # Role policies
+```
+
+## 🔧 Core Features
+
+### ✅ Implemented
+
+- **DSP Graph System** - Modular audio processing with typed parameters
+- **JSON Parser** - Self-contained JSON parsing for preset loading
+- **Audio Processing** - Oscillators, filters, envelopes, and LFOs
+- **Cross-Platform Build** - Works on Windows, macOS, and Linux
+- **CMake Presets** - Easy configuration for different platforms
+
+### 🚧 Optional Features (when dependencies available)
+
+- **OpenCV Integration** - Computer vision utilities (optional)
+- **YAML Configuration** - YAML-based configuration (optional)
+- **Unit Testing** - Google Test integration (optional)
+
+## 🎵 Usage Examples
+
+### Basic DSP Graph Creation
 
 ```cpp
-#include "main_app.h"
+#include "core_types.h"
+#include "dsp_ir.h"
 
 using namespace aiaudio;
 
-int main() {
-    // Initialize the AI Audio Generator
-    AIAudioGenerator generator;
-    
-    // Create generation request
-    AIAudioGenerator::GenerationRequest request;
-    request.prompt = "dreamy atmospheric pad with reverb";
-    request.role = Role::PAD;
-    request.context.tempo = 120.0;
-    request.context.key = 0; // C major
-    request.context.scale = "major";
-    request.constraints.maxCPU = 0.8;
-    request.constraints.maxLatency = 10.0;
-    
-    // Generate audio
-    auto result = generator.generate(request);
-    
-    // Access results
-    std::cout << "Generated " << result.audio.size() << " samples" << std::endl;
-    std::cout << "Quality score: " << result.qualityScore << std::endl;
-    std::cout << "Explanation: " << result.explanation << std::endl;
-    
-    return 0;
-}
+// Create a simple oscillator
+auto osc = std::make_unique<OscillatorStage>();
+osc->setParameter("frequency", 440.0);
+osc->setParameter("amplitude", 0.5);
+osc->setParameter("waveType", std::string("sine"));
+
+// Create a filter
+auto filter = std::make_unique<FilterStage>();
+filter->setParameter("cutoff", 1000.0);
+filter->setParameter("resonance", 0.3);
+
+// Create DSP graph
+DSPGraph graph;
+graph.addStage("osc1", std::move(osc));
+graph.addStage("filter1", std::move(filter));
+
+// Process audio
+AudioBuffer input(1024, 0.0);
+AudioBuffer output;
+graph.process(input, output);
 ```
 
-### Advanced Usage
+### JSON Preset Loading
 
 ```cpp
-// Custom configuration
-std::map<std::string, std::string> config;
-config["semantic_model"] = "advanced";
-config["policy_strictness"] = "high";
-config["quality_threshold"] = "0.8";
-generator.setConfiguration(config);
+#include "dsp_ir.h"
 
-// Load custom presets
-generator.loadPreset("custom_pad.json");
+// JSON preset data
+std::string jsonPreset = R"({
+    "stages": {
+        "oscillator": {
+            "type": "oscillator",
+            "parameters": {
+                "frequency": 880.0,
+                "amplitude": 0.7,
+                "waveType": "square"
+            }
+        }
+    },
+    "connections": []
+})";
 
-// Batch processing
-std::vector<std::string> prompts = {
-    "warm pad", "aggressive bass", "melodic lead"
-};
-std::vector<Role> roles = {Role::PAD, Role::BASS, Role::LEAD};
-
-for (size_t i = 0; i < prompts.size(); ++i) {
-    AIAudioGenerator::GenerationRequest request;
-    request.prompt = prompts[i];
-    request.role = roles[i];
-    request.context.tempo = 120.0;
-    request.context.key = 0;
-    request.context.scale = "major";
-    
-    auto result = generator.generate(request);
-    std::cout << prompts[i] << " -> Quality: " << result.qualityScore << std::endl;
-}
+// Parse and create graph
+IRParser parser;
+auto graph = parser.parsePreset(jsonPreset);
 ```
 
-## Configuration
+## 🛠️ Development
 
-### Metrics Configuration (`config/metrics.yaml`)
+### Adding New DSP Stages
 
-```yaml
-roles:
-  pad:
-    thresholds:
-      semantic_match: 0.7
-      mix_readiness: 0.8
-      perceptual_quality: 0.75
-      stability: 0.9
-      preference_win: 0.65
-    constraints:
-      lufs_target: -18.0
-      true_peak_limit: -1.0
-      max_cpu: 0.8
-      max_latency: 10.0
+1. Create a new class inheriting from `DSPStage`
+2. Implement the required virtual methods
+3. Add to the `createStageFromJSON` function in `IRParser`
+4. Update the JSON schema documentation
+
+### Extending JSON Support
+
+The bundled `simple_json.h` provides a lightweight JSON parser. To extend it:
+
+1. Add new parsing methods to the `Reader` class
+2. Add new value types to the `Value` class
+3. Update the `IRParser` to use new features
+
+### Platform-Specific Code
+
+Use CMake's platform detection:
+
+```cpp
+#ifdef _WIN32
+    // Windows-specific code
+#elif __APPLE__
+    // macOS-specific code
+#elif __linux__
+    // Linux-specific code
+#endif
 ```
 
-### Role Policies (`config/roles.yaml`)
+## 🐛 Troubleshooting
 
-```yaml
-pad:
-  version: "1.0"
-  description: "Atmospheric pad sounds"
-  constraints:
-    frequency:
-      type: "range"
-      min: 100.0
-      max: 2000.0
-      weight: 1.0
-    attack:
-      type: "range"
-      min: 0.1
-      max: 2.0
-      weight: 0.8
+### Common Build Issues
+
+1. **CMake not found**
+   ```bash
+   # Ubuntu/Debian
+   sudo apt install cmake
+   
+   # macOS
+   brew install cmake
+   
+   # Windows (MSYS2)
+   pacman -S mingw-w64-x86_64-cmake
+   ```
+
+2. **C++20 not supported**
+   - Update your compiler to GCC 10+, Clang 12+, or MSVC 2019+
+   - Check with: `g++ --version` or `clang++ --version`
+
+3. **Build fails on Windows**
+   - Use MSYS2 MinGW: `cmake .. -G "MinGW Makefiles"`
+   - Ensure you're using the correct generator for your setup
+
+4. **JSON parsing errors**
+   - The bundled JSON parser is basic but functional
+   - For complex JSON, consider adding a full JSON library
+
+### Debug Build
+
+```bash
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+make
+gdb ./src/aiaudio_generator  # or lldb on macOS
 ```
 
-## API Reference
+## 📋 Dependencies
 
-### Core Classes
+### Required
+- C++20 compiler
+- CMake 3.20+
+- Make or Ninja
 
-- `AIAudioGenerator` - Main generation interface
-- `MOOOptimizer` - Multi-objective optimization
-- `SemanticFusionEngine` - Semantic query processing
-- `PolicyManager` - Role-based policy management
-- `DecisionHeads` - MLP-based decision making
-- `DSPGraph` - Audio processing graph
-- `AudioRenderer` - Real-time audio rendering
+### Optional
+- OpenCV (for computer vision features)
+- yaml-cpp (for YAML configuration)
+- Google Test (for unit testing)
 
-### Key Functions
-
-- `generate()` - Generate audio from prompt
-- `loadPreset()` - Load DSP preset from JSON
-- `applyPolicy()` - Apply role-specific constraints
-- `assessQuality()` - Evaluate audio quality
-- `renderRealtime()` - Real-time audio rendering
-
-## Examples
-
-See `example_usage.cpp` for comprehensive examples including:
-
-- Basic audio generation
-- Advanced configuration
-- Real-time processing
-- Quality assessment
-- System monitoring
-- Batch processing
-
-## Performance
-
-### Benchmarks
-
-- **Generation Time**: < 100ms for 8-second audio
-- **Real-time Latency**: < 5ms for 1024-sample buffers
-- **CPU Usage**: < 80% on modern hardware
-- **Memory Usage**: < 512MB typical
-
-### Optimization
-
-- SIMD-optimized audio processing
-- Multi-threaded generation pipeline
-- Efficient memory management
-- Real-time constraint checking
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests
+4. Test on multiple platforms
 5. Submit a pull request
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is part of the AI Audio Generator system. See the main project documentation for licensing information.
 
-## Citation
+## 🆘 Support
 
-If you use this system in your research, please cite:
+For issues and questions:
 
-```bibtex
-@software{aiaudio_generator,
-  title={AI Audio Generator: A Research-Grade Audio Generation System},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/yourusername/ai-audio-generator}
-}
-```
+1. Check the troubleshooting section
+2. Run `./build_and_run.sh` to test the system
+3. Check the console output for error messages
+4. Verify all dependencies are properly installed
 
-## Acknowledgments
+## 🎯 Future Enhancements
 
-- OpenCV for computer vision utilities
-- nlohmann/json for JSON processing
-- yaml-cpp for YAML configuration
-- The audio processing community for inspiration
+- **VST Plugin Support** - Real-time plugin interface
+- **Web Interface** - Browser-based generation
+- **Advanced ML Models** - ONNX integration
+- **Real-time Audio** - Low-latency processing
+- **Cloud Deployment** - Scalable cloud service
 
-## Roadmap
+---
 
-- [ ] ONNX model integration
-- [ ] VST plugin support
-- [ ] Web interface
-- [ ] Cloud deployment
-- [ ] Advanced ML models
-- [ ] Real-time collaboration
+**Status**: ✅ Core functionality working, ready for development and testing

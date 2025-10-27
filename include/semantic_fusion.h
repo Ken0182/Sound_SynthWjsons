@@ -11,9 +11,11 @@ namespace aiaudio {
 
 // Semantic Fusion: Query + Tags + Descriptions
 
+// Type alias for embedding vectors
+using EmbeddingVector = std::vector<double>;
+
 class SemanticEmbedding {
 public:
-    using EmbeddingVector = std::vector<double>;
     
     // Encode text to embedding vector
     virtual EmbeddingVector encode(const std::string& text) const = 0;

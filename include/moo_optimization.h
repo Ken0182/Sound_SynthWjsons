@@ -105,23 +105,23 @@ private:
 class ParetoAnalyzer {
 public:
     struct FrontAnalysis {
-        std::vector<ParetoPoint> paretoFront;
+        std::vector<MOOOptimizer::ParetoPoint> paretoFront;
         double hypervolume;
         std::vector<double> objectiveRanges;
         std::map<std::string, double> statistics;
     };
     
-    FrontAnalysis analyzeFront(const std::vector<ParetoPoint>& population) const;
+    FrontAnalysis analyzeFront(const std::vector<MOOOptimizer::ParetoPoint>& population) const;
     
     // Find knee point (best compromise)
-    ParetoPoint findKneePoint(const std::vector<ParetoPoint>& front) const;
+    MOOOptimizer::ParetoPoint findKneePoint(const std::vector<MOOOptimizer::ParetoPoint>& front) const;
     
     // Diversity metrics
-    double calculateDiversity(const std::vector<ParetoPoint>& front) const;
+    double calculateDiversity(const std::vector<MOOOptimizer::ParetoPoint>& front) const;
     
     // Convergence metrics
-    double calculateConvergence(const std::vector<ParetoPoint>& current,
-                               const std::vector<ParetoPoint>& previous) const;
+    double calculateConvergence(const std::vector<MOOOptimizer::ParetoPoint>& current,
+                               const std::vector<MOOOptimizer::ParetoPoint>& previous) const;
 };
 
 } // namespace aiaudio

@@ -5,7 +5,9 @@
 #include <vector>
 #include <string>
 #include <memory>
+#ifdef HAVE_YAML_CPP
 #include <yaml-cpp/yaml.h>
+#endif
 
 namespace aiaudio {
 

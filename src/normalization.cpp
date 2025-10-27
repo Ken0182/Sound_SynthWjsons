@@ -265,7 +265,7 @@ bool PresetNormalizer::checkPhaseStability(const NormalizedPreset& preset) const
 }
 
 // SnapshotTester implementation
-SnapshotTester::Snapshot SnapshotTester::createSnapshot(const NormalizedPreset& preset) const {
+SnapshotTester::Snapshot SnapshotTester::createSnapshot(const PresetNormalizer::NormalizedPreset& preset) const {
     Snapshot snapshot;
     snapshot.parameters = preset.parameters;
     snapshot.timestamp = std::chrono::system_clock::now();

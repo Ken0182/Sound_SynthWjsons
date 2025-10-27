@@ -1,4 +1,5 @@
-#include "main_app.h"
+#include "core_types.h"
+#include "dsp_ir.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -7,129 +8,78 @@ using namespace aiaudio;
 
 int main(int argc, char* argv[]) {
     try {
-        // Initialize the AI Audio Generator
-        std::cout << "Initializing AI Audio Generator..." << std::endl;
-        AIAudioGenerator generator;
+        std::cout << "AI Audio Generator - Basic Test" << std::endl;
+        std::cout << "==============================" << std::endl;
         
-        // Check system status
-        auto status = generator.getStatus();
-        std::cout << "System Status:" << std::endl;
-        std::cout << "  Initialized: " << (status.initialized ? "Yes" : "No") << std::endl;
-        std::cout << "  Loaded Presets: " << status.loadedPresets << std::endl;
-        std::cout << "  Active Features: ";
-        for (const auto& feature : status.activeFeatures) {
-            std::cout << feature << " ";
+        // Test basic DSP functionality
+        std::cout << "\nTesting DSP Graph Creation..." << std::endl;
+        
+        // Create a simple oscillator
+        auto osc = std::make_unique<OscillatorStage>();
+        osc->setParameter("frequency", 440.0);
+        osc->setParameter("amplitude", 0.5);
+        osc->setParameter("waveType", std::string("sine"));
+        
+        std::cout << "Created oscillator: " << osc->getDescription() << std::endl;
+        
+        // Create a simple filter
+        auto filter = std::make_unique<FilterStage>();
+        filter->setParameter("cutoff", 1000.0);
+        filter->setParameter("resonance", 0.3);
+        
+        std::cout << "Created filter: " << filter->getDescription() << std::endl;
+        
+        // Create a DSP graph
+        DSPGraph graph;
+        graph.addStage("osc1", std::move(osc));
+        graph.addStage("filter1", std::move(filter));
+        
+        std::cout << "Created DSP graph with " << graph.getStageNames().size() << " stages" << std::endl;
+        
+        // Test JSON parsing
+        std::cout << "\nTesting JSON Parsing..." << std::endl;
+        
+        std::string testJson = R"({
+            "stages": {
+                "test_osc": {
+                    "type": "oscillator",
+                    "parameters": {
+                        "frequency": 880.0,
+                        "amplitude": 0.7,
+                        "waveType": "square"
+                    }
+                }
+            },
+            "connections": []
+        })";
+        
+        IRParser parser;
+        auto parsedGraph = parser.parsePreset(testJson);
+        std::cout << "Parsed JSON graph with " << parsedGraph->getStageNames().size() << " stages" << std::endl;
+        
+        // Test audio processing
+        std::cout << "\nTesting Audio Processing..." << std::endl;
+        
+        AudioBuffer input(1024, 0.0); // Silent input
+        AudioBuffer output;
+        
+        graph.process(input, output);
+        std::cout << "Processed " << input.size() << " input samples to " << output.size() << " output samples" << std::endl;
+        
+        // Calculate some basic statistics
+        double rms = 0.0;
+        double peak = 0.0;
+        for (const auto& sample : output) {
+            rms += sample * sample;
+            peak = std::max(peak, static_cast<double>(std::abs(sample)));
         }
-        std::cout << std::endl;
+        rms = std::sqrt(rms / output.size());
         
-        // Example 1: Generate a pad sound
-        std::cout << "\n=== Example 1: Dreamy Pad ===" << std::endl;
-        AIAudioGenerator::GenerationRequest padRequest;
-        padRequest.prompt = "dreamy atmospheric pad with reverb";
-        padRequest.role = Role::PAD;
-        padRequest.context.tempo = 120.0;
-        padRequest.context.key = 0; // C major
-        padRequest.context.scale = "major";
-        padRequest.constraints.maxCPU = 0.8;
-        padRequest.constraints.maxLatency = 10.0;
-        padRequest.useSemanticSearch = true;
-        padRequest.applyPolicies = true;
+        std::cout << "Output RMS: " << rms << std::endl;
+        std::cout << "Output Peak: " << peak << std::endl;
         
-        auto padResult = generator.generate(padRequest);
-        std::cout << "Generated pad audio: " << padResult.audio.size() << " samples" << std::endl;
-        std::cout << "Quality Score: " << padResult.qualityScore << std::endl;
-        std::cout << "Explanation: " << padResult.explanation << std::endl;
-        
-        if (!padResult.warnings.empty()) {
-            std::cout << "Warnings:" << std::endl;
-            for (const auto& warning : padResult.warnings) {
-                std::cout << "  - " << warning << std::endl;
-            }
-        }
-        
-        // Example 2: Generate a bass sound
-        std::cout << "\n=== Example 2: Punchy Bass ===" << std::endl;
-        AIAudioGenerator::GenerationRequest bassRequest;
-        bassRequest.prompt = "punchy bass with tight envelope";
-        bassRequest.role = Role::BASS;
-        bassRequest.context.tempo = 140.0;
-        bassRequest.context.key = 7; // G major
-        bassRequest.context.scale = "major";
-        bassRequest.constraints.maxCPU = 0.6;
-        bassRequest.constraints.maxLatency = 5.0;
-        
-        auto bassResult = generator.generate(bassRequest);
-        std::cout << "Generated bass audio: " << bassResult.audio.size() << " samples" << std::endl;
-        std::cout << "Quality Score: " << bassResult.qualityScore << std::endl;
-        std::cout << "Explanation: " << bassResult.explanation << std::endl;
-        
-        // Example 3: Generate a lead sound
-        std::cout << "\n=== Example 3: Bright Lead ===" << std::endl;
-        AIAudioGenerator::GenerationRequest leadRequest;
-        leadRequest.prompt = "bright lead with modulation";
-        leadRequest.role = Role::LEAD;
-        leadRequest.context.tempo = 128.0;
-        leadRequest.context.key = 2; // D major
-        leadRequest.context.scale = "major";
-        leadRequest.constraints.maxCPU = 0.7;
-        leadRequest.constraints.maxLatency = 8.0;
-        
-        auto leadResult = generator.generate(leadRequest);
-        std::cout << "Generated lead audio: " << leadResult.audio.size() << " samples" << std::endl;
-        std::cout << "Quality Score: " << leadResult.qualityScore << std::endl;
-        std::cout << "Explanation: " << leadResult.explanation << std::endl;
-        
-        // Example 4: Batch generation
-        std::cout << "\n=== Example 4: Batch Generation ===" << std::endl;
-        std::vector<std::string> prompts = {
-            "warm pad",
-            "aggressive bass",
-            "melodic lead",
-            "percussive texture"
-        };
-        
-        std::vector<Role> roles = {
-            Role::PAD,
-            Role::BASS,
-            Role::LEAD,
-            Role::TEXTURE
-        };
-        
-        for (size_t i = 0; i < prompts.size(); ++i) {
-            AIAudioGenerator::GenerationRequest request;
-            request.prompt = prompts[i];
-            request.role = roles[i];
-            request.context.tempo = 120.0;
-            request.context.key = 0;
-            request.context.scale = "major";
-            request.constraints.maxCPU = 0.8;
-            request.constraints.maxLatency = 10.0;
-            
-            auto result = generator.generate(request);
-            std::cout << "  " << prompts[i] << " -> Quality: " << result.qualityScore << std::endl;
-        }
-        
-        // Example 5: System monitoring
-        std::cout << "\n=== Example 5: System Monitoring ===" << std::endl;
-        SystemMonitor monitor;
-        monitor.startMonitoring();
-        
-        // Generate some audio to monitor
-        for (int i = 0; i < 5; ++i) {
-            auto result = generator.generate(padRequest);
-            std::cout << "Generated sample " << (i + 1) << std::endl;
-        }
-        
-        auto metrics = monitor.getMetrics();
-        std::cout << "Performance Metrics:" << std::endl;
-        std::cout << "  CPU Usage: " << metrics.cpuUsage << "%" << std::endl;
-        std::cout << "  Memory Usage: " << metrics.memoryUsage << "%" << std::endl;
-        std::cout << "  Total Renders: " << metrics.totalRenders << std::endl;
-        std::cout << "  Successful Renders: " << metrics.successfulRenders << std::endl;
-        
-        monitor.stopMonitoring();
-        
-        std::cout << "\n=== AI Audio Generation Complete ===" << std::endl;
+        std::cout << "\n=== Basic Test Complete ===" << std::endl;
+        std::cout << "The AI Audio Generator core functionality is working!" << std::endl;
         
     } catch (const AIAudioException& e) {
         std::cerr << "AI Audio Error: " << e.what() << std::endl;
