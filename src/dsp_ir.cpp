@@ -2,9 +2,14 @@
 #include <algorithm>
 #include <cmath>
 #include <queue>
+#include <unordered_set>
 #include <sstream>
 #include <fstream>
-#include <json/json.h>
+#include <nlohmann/json.hpp>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 namespace aiaudio {
 
@@ -558,63 +563,75 @@ void DSPGraph::topologicalSortDFS(const std::string& node,
 }
 
 // IRParser implementation
-std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
-    auto graph = std::make_unique<DSPGraph>();
-    
-    Json::Value root;
-    Json::Reader reader;
-    
-    if (!reader.parse(jsonData, root)) {
-        throw AIAudioException("Failed to parse JSON: " + reader.getFormattedErrorMessages());
+std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonOrPath) {
+    // Accept either raw JSON content or a file path
+    std::string jsonContent = jsonOrPath;
+    if (jsonContent.empty() || (jsonContent.front() != '{' && jsonContent.front() != '[')) {
+        std::ifstream file(jsonOrPath);
+        if (!file.is_open()) {
+            throw AIAudioException("Failed to open preset file: " + jsonOrPath);
+        }
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        jsonContent = buffer.str();
     }
-    
+
+    nlohmann::json root;
+    try {
+        root = nlohmann::json::parse(jsonContent);
+    } catch (const std::exception& e) {
+        throw AIAudioException(std::string("Failed to parse JSON: ") + e.what());
+    }
+
+    auto graph = std::make_unique<DSPGraph>();
+
     // Parse stages
-    if (root.isMember("stages")) {
-        const auto& stages = root["stages"];
-        for (const auto& stageName : stages.getMemberNames()) {
-            const auto& stageData = stages[stageName];
-            std::string type = stageData["type"].asString();
-            
+    if (root.contains("stages") && root["stages"].is_object()) {
+        for (auto it = root["stages"].begin(); it != root["stages"].end(); ++it) {
+            const std::string stageName = it.key();
+            const auto& stageData = it.value();
+            const std::string type = stageData.value("type", "");
+
             ParamMap params;
-            if (stageData.isMember("parameters")) {
-                const auto& paramData = stageData["parameters"];
-                for (const auto& paramName : paramData.getMemberNames()) {
-                    const auto& paramValue = paramData[paramName];
-                    if (paramValue.isDouble()) {
-                        params[paramName] = paramValue.asDouble();
-                    } else if (paramValue.isString()) {
-                        params[paramName] = paramValue.asString();
-                    } else if (paramValue.isBool()) {
-                        params[paramName] = paramValue.asBool();
+            if (stageData.contains("parameters") && stageData["parameters"].is_object()) {
+                for (auto pit = stageData["parameters"].begin(); pit != stageData["parameters"].end(); ++pit) {
+                    const std::string paramName = pit.key();
+                    const auto& paramValue = pit.value();
+                    if (paramValue.is_number_float() || paramValue.is_number_integer()) {
+                        params[paramName] = paramValue.get<double>();
+                    } else if (paramValue.is_boolean()) {
+                        params[paramName] = paramValue.get<bool>();
+                    } else if (paramValue.is_string()) {
+                        params[paramName] = paramValue.get<std::string>();
                     }
                 }
             }
-            
+
             auto stage = createStageFromJSON(type, params);
             graph->addStage(stageName, std::move(stage));
         }
     }
-    
+
     // Parse connections
-    if (root.isMember("connections")) {
-        const auto& connections = root["connections"];
-        for (const auto& conn : connections) {
+    if (root.contains("connections") && root["connections"].is_array()) {
+        for (const auto& conn : root["connections"]) {
+            if (!conn.is_object()) continue;
             Connection connection;
-            connection.source = conn["source"].asString();
-            connection.destination = conn["destination"].asString();
-            if (conn.isMember("parameter")) {
-                connection.parameter = conn["parameter"].asString();
+            connection.source = conn.value("source", "");
+            connection.destination = conn.value("destination", "");
+            connection.parameter = conn.value("parameter", "");
+            if (conn.contains("amount") && (conn["amount"].is_number_float() || conn["amount"].is_number_integer())) {
+                connection.amount = conn["amount"].get<double>();
             }
-            if (conn.isMember("amount")) {
-                connection.amount = conn["amount"].asDouble();
+            if (conn.contains("enabled") && conn["enabled"].is_boolean()) {
+                connection.enabled = conn["enabled"].get<bool>();
             }
-            if (conn.isMember("enabled")) {
-                connection.enabled = conn["enabled"].asBool();
+            if (!connection.source.empty() && !connection.destination.empty()) {
+                graph->addConnection(connection);
             }
-            graph->addConnection(connection);
         }
     }
-    
+
     return graph;
 }
 

@@ -84,7 +84,7 @@ private:
     DSPGraph applySemanticSearch(const std::string& prompt, Role role);
     DSPGraph applyDecisionHeads(const DSPGraph& graph, const GenerationRequest& request);
     DSPGraph applyPolicies(const DSPGraph& graph, Role role, const MusicalContext& context);
-    AudioBuffer renderGraph(const DSPGraph& graph, size_t numSamples);
+    AudioBuffer renderGraph(DSPGraph& graph, size_t numSamples);
     Trace createTrace(const GenerationRequest& request, const DSPGraph& graph, const AudioBuffer& audio);
     
     // Quality assessment
@@ -160,10 +160,10 @@ private:
 class AudioRenderer {
 public:
     // Render audio from graph
-    AudioBuffer render(const DSPGraph& graph, size_t numSamples, double sampleRate = 44100.0);
+    AudioBuffer render(DSPGraph& graph, size_t numSamples, double sampleRate = 44100.0);
     
     // Render with real-time constraints
-    AudioBuffer renderRealtime(const DSPGraph& graph, size_t numSamples, 
+    AudioBuffer renderRealtime(DSPGraph& graph, size_t numSamples, 
                               double maxLatencyMs = 10.0);
     
     // Get rendering statistics

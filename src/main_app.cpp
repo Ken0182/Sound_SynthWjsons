@@ -224,7 +224,7 @@ DSPGraph AIAudioGenerator::applyPolicies(const DSPGraph& graph, Role role, const
     return graph;
 }
 
-AudioBuffer AIAudioGenerator::renderGraph(const DSPGraph& graph, size_t numSamples) {
+AudioBuffer AIAudioGenerator::renderGraph(DSPGraph& graph, size_t numSamples) {
     AudioBuffer input(numSamples, 0.0); // Silent input
     AudioBuffer output;
     
@@ -283,7 +283,7 @@ std::vector<std::string> AIAudioGenerator::checkWarnings(const AudioBuffer& audi
 
 std::string AIAudioGenerator::generateExplanation(const GenerationRequest& request, const DSPGraph& graph) {
     std::stringstream explanation;
-    explanation << "Generated " << request.role << " sound for prompt: \"" << request.prompt << "\"\n";
+    explanation << "Generated role " << static_cast<int>(request.role) << " sound for prompt: \"" << request.prompt << "\"\n";
     explanation << "Graph contains " << graph.getStageNames().size() << " stages\n";
     explanation << "Tempo: " << request.context.tempo << " BPM\n";
     explanation << "Key: " << request.context.key << "\n";
@@ -299,8 +299,11 @@ void AIAudioGenerator::initializeComponents() {
     policyManager_ = std::make_unique<PolicyManager>();
     
     // Create decision heads with simple MLP
-    auto mlp = std::make_unique<DecisionMLP>(400, {256, 128}, 20); // 400 input, 20 output
-    decisionHeads_ = std::make_unique<DecisionHeads>(std::move(mlp));
+    std::vector<size_t> hiddenSizes;
+    hiddenSizes.push_back(256);
+    hiddenSizes.push_back(128);
+    std::unique_ptr<DecisionMLP> mlp(new DecisionMLP(400, hiddenSizes, 20));
+    decisionHeads_ = std::unique_ptr<DecisionHeads>(new DecisionHeads(std::move(mlp)));
 }
 
 void AIAudioGenerator::loadDefaultPresets() {
@@ -436,7 +439,7 @@ std::vector<std::string> PresetManager::getAllPresets() const {
 }
 
 // AudioRenderer implementation
-AudioBuffer AudioRenderer::render(const DSPGraph& graph, size_t numSamples, double sampleRate) {
+AudioBuffer AudioRenderer::render(DSPGraph& graph, size_t numSamples, double sampleRate) {
     sampleRate_ = sampleRate;
     
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -458,7 +461,7 @@ AudioBuffer AudioRenderer::render(const DSPGraph& graph, size_t numSamples, doub
     return output;
 }
 
-AudioBuffer AudioRenderer::renderRealtime(const DSPGraph& graph, size_t numSamples, double maxLatencyMs) {
+AudioBuffer AudioRenderer::renderRealtime(DSPGraph& graph, size_t numSamples, double maxLatencyMs) {
     auto startTime = std::chrono::high_resolution_clock::now();
     
     AudioBuffer result = render(graph, numSamples);

@@ -3,6 +3,7 @@
 #include <sstream>
 #include <algorithm>
 #include <numeric>
+#include <queue>
 #include <cmath>
 
 namespace aiaudio {

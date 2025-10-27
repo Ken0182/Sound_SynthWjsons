@@ -1,31 +1,62 @@
 cmake_minimum_required(VERSION 3.20)
-project(AIAudioGenerator)
+project(AIAudioGenerator LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Find required packages
-find_package(PkgConfig REQUIRED)
-find_package(OpenCV REQUIRED)
-find_package(nlohmann_json REQUIRED)
+include(FetchContent)
+include(CTest)
 
-# Include directories
-include_directories(include)
-include_directories(third_party)
+# Threads (portable)
+find_package(Threads REQUIRED)
 
-# Add subdirectories
+# nlohmann_json: prefer system, fallback to FetchContent (header-only)
+find_package(nlohmann_json CONFIG QUIET)
+if(NOT nlohmann_json_FOUND)
+  message(STATUS "nlohmann_json not found; fetching via FetchContent")
+  FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+  )
+  set(JSON_BuildTests OFF CACHE INTERNAL "")
+  FetchContent_MakeAvailable(nlohmann_json)
+endif()
+
+# yaml-cpp: optional. Prefer system; disable fetch on CI lacking network.
+set(YAML_CPP_TARGET "")
+find_package(yaml-cpp CONFIG QUIET)
+if(TARGET yaml-cpp::yaml-cpp)
+  set(YAML_CPP_TARGET yaml-cpp::yaml-cpp)
+elseif(TARGET yaml-cpp)
+  add_library(yaml-cpp::yaml-cpp ALIAS yaml-cpp)
+  set(YAML_CPP_TARGET yaml-cpp::yaml-cpp)
+else()
+  message(STATUS "yaml-cpp not found; building without YAML policy support. Some features disabled.")
+endif()
+
+# Provide global include directory for project headers
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+# Testing setup (ensure GTest targets exist before adding tests)
+if(BUILD_TESTING)
+  # Try system GTest, else FetchContent
+  find_package(GTest CONFIG QUIET)
+  if(NOT TARGET GTest::gtest)
+    message(STATUS "GTest not found; fetching via FetchContent")
+    FetchContent_Declare(
+      googletest
+      GIT_REPOSITORY https://github.com/google/googletest.git
+      GIT_TAG v1.14.0
+    )
+    set(INSTALL_GTEST OFF CACHE INTERNAL "")
+    FetchContent_MakeAvailable(googletest)
+  endif()
+endif()
+
+# Subdirectories
 add_subdirectory(src)
-add_subdirectory(include)
-add_subdirectory(tests)
-
-# Compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -ffast-math")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
-
-# Link libraries
-target_link_libraries(aiaudio_generator 
-    ${OpenCV_LIBS}
-    nlohmann_json::nlohmann_json
-    pthread
-    m
-)
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()

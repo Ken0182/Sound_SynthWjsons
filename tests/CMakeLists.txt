@@ -1,7 +1,10 @@
 # Tests CMakeLists.txt
 
-# Find Google Test
-find_package(GTest REQUIRED)
+# Find Google Test (from parent via find_package or FetchContent)
+find_package(GTest CONFIG QUIET)
+if(NOT TARGET GTest::gtest)
+  message(FATAL_ERROR "GTest is required for tests; enable BUILD_TESTING or provide GTest config")
+endif()
 
 # Create test executable
 add_executable(aiaudio_tests
@@ -13,7 +16,7 @@ target_link_libraries(aiaudio_tests
     aiaudio_core
     GTest::gtest
     GTest::gtest_main
-    pthread
+    Threads::Threads
 )
 
 # Include directories

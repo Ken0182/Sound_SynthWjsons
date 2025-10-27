@@ -2,7 +2,6 @@
 
 # Create the main library
 add_library(aiaudio_core
-    core_types.cpp
     moo_optimization.cpp
     dsp_ir.cpp
     normalization.cpp
@@ -14,11 +13,14 @@ add_library(aiaudio_core
 
 # Link libraries
 target_link_libraries(aiaudio_core
-    ${OpenCV_LIBS}
     nlohmann_json::nlohmann_json
-    pthread
-    m
+    Threads::Threads
 )
+
+if (YAML_CPP_TARGET)
+    target_link_libraries(aiaudio_core ${YAML_CPP_TARGET})
+    target_compile_definitions(aiaudio_core PRIVATE AIAUDIO_HAVE_YAML=1)
+endif()
 
 # Include directories
 target_include_directories(aiaudio_core PUBLIC
@@ -43,12 +45,10 @@ set_target_properties(aiaudio_generator PROPERTIES
 )
 
 # Compiler flags
-target_compile_options(aiaudio_core PRIVATE
-    -Wall -Wextra -Wpedantic
-    -O3 -march=native -ffast-math
-)
-
-target_compile_options(aiaudio_generator PRIVATE
-    -Wall -Wextra -Wpedantic
-    -O3 -march=native -ffast-math
-)
+if (MSVC)
+    target_compile_options(aiaudio_core PRIVATE /W4)
+    target_compile_options(aiaudio_generator PRIVATE /W4)
+else()
+    target_compile_options(aiaudio_core PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(aiaudio_generator PRIVATE -Wall -Wextra -Wpedantic)
+endif()

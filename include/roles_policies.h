@@ -1,11 +1,14 @@
 #pragma once
 
 #include "core_types.h"
+#include "dsp_ir.h"
 #include <map>
 #include <vector>
 #include <string>
 #include <memory>
-#include <yaml-cpp/yaml.h>
+
+// Forward declaration to avoid mandatory yaml-cpp dependency in headers
+namespace YAML { class Node; }
 
 namespace aiaudio {
 
@@ -65,10 +68,6 @@ private:
     PolicyConstraint parseConstraint(const YAML::Node& node) const;
     std::map<std::string, double> parsePriors(const YAML::Node& node) const;
     std::map<std::string, double> parsePenalties(const YAML::Node& node) const;
-    
-    // Constraint validation
-    bool validateConstraint(const PolicyConstraint& constraint, double value) const;
-    double computeViolationPenalty(const PolicyConstraint& constraint, double value) const;
 };
 
 // Policy application engine
@@ -117,6 +116,10 @@ private:
     void adjustForTempo(DSPGraph& graph, const MusicalContext& context) const;
     void adjustForKey(DSPGraph& graph, const MusicalContext& context) const;
     void adjustForScale(DSPGraph& graph, const MusicalContext& context) const;
+
+    // Constraint validation (moved here)
+    bool validateConstraint(const PolicyConstraint& constraint, double value) const;
+    double computeViolationPenalty(const PolicyConstraint& constraint, double value) const;
 };
 
 // Policy manager

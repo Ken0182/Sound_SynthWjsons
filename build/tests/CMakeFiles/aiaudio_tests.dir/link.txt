@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -Xlinker --dependency-file=CMakeFiles/aiaudio_tests.dir/link.d CMakeFiles/aiaudio_tests.dir/test_system.cpp.o -o aiaudio_tests  ../src/libaiaudio_core.a ../lib/libgtest.a ../lib/libgtest_main.a ../lib/libgtest.a

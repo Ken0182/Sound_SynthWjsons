@@ -1,0 +1,49 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 20 },
+  "configurePresets": [
+    {
+      "name": "ninja-release",
+      "displayName": "Ninja - Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ninja-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "ON",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "Ninja - Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ninja-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTING": "ON",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "mingw-make-release",
+      "displayName": "MinGW Makefiles - Release (MSYS2)",
+      "generator": "MinGW Makefiles",
+      "binaryDir": "${sourceDir}/build/mingw-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "ON",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "ninja-release", "configurePreset": "ninja-release", "jobs": 0 },
+    { "name": "ninja-debug", "configurePreset": "ninja-debug", "jobs": 0 },
+    { "name": "mingw-make-release", "configurePreset": "mingw-make-release", "jobs": 0 }
+  ],
+  "testPresets": [
+    { "name": "ninja-release", "configurePreset": "ninja-release" },
+    { "name": "ninja-debug", "configurePreset": "ninja-debug" },
+    { "name": "mingw-make-release", "configurePreset": "mingw-make-release" }
+  ]
+}

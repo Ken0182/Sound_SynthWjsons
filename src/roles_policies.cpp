@@ -3,11 +3,17 @@
 #include <sstream>
 #include <algorithm>
 #include <random>
+#ifdef AIAUDIO_HAVE_YAML
+#include <yaml-cpp/yaml.h>
+#endif
 
 namespace aiaudio {
 
 // PolicyCompiler implementation
 RolePolicy PolicyCompiler::loadPolicy(const std::string& yamlContent, Role role) {
+#ifndef AIAUDIO_HAVE_YAML
+    throw AIAudioException("YAML support is not available (yaml-cpp missing)");
+#else
     YAML::Node root = YAML::Load(yamlContent);
     
     RolePolicy policy;
@@ -37,6 +43,7 @@ RolePolicy PolicyCompiler::loadPolicy(const std::string& yamlContent, Role role)
     }
     
     return policy;
+#endif
 }
 
 RolePolicy PolicyCompiler::loadPolicyFromFile(const std::string& filePath, Role role) {
@@ -153,6 +160,10 @@ RolePolicy PolicyCompiler::resolveConflicts(const std::vector<RolePolicy>& polic
 }
 
 PolicyConstraint PolicyCompiler::parseConstraint(const YAML::Node& node) const {
+#ifndef AIAUDIO_HAVE_YAML
+    (void)node;
+    return {};
+#else
     PolicyConstraint constraint;
     
     std::string typeStr = node["type"].as<std::string>("range");
@@ -179,9 +190,14 @@ PolicyConstraint PolicyCompiler::parseConstraint(const YAML::Node& node) const {
     constraint.weight = node["weight"].as<double>(1.0);
     
     return constraint;
+#endif
 }
 
 std::map<std::string, double> PolicyCompiler::parsePriors(const YAML::Node& node) const {
+#ifndef AIAUDIO_HAVE_YAML
+    (void)node;
+    return {};
+#else
     std::map<std::string, double> priors;
     
     for (const auto& priorNode : node) {
@@ -191,9 +207,14 @@ std::map<std::string, double> PolicyCompiler::parsePriors(const YAML::Node& node
     }
     
     return priors;
+#endif
 }
 
 std::map<std::string, double> PolicyCompiler::parsePenalties(const YAML::Node& node) const {
+#ifndef AIAUDIO_HAVE_YAML
+    (void)node;
+    return {};
+#else
     std::map<std::string, double> penalties;
     
     for (const auto& penaltyNode : node) {
@@ -203,6 +224,7 @@ std::map<std::string, double> PolicyCompiler::parsePenalties(const YAML::Node& n
     }
     
     return penalties;
+#endif
 }
 
 // PolicyEngine implementation

@@ -2,6 +2,7 @@
 
 #include "core_types.h"
 #include "semantic_fusion.h"
+#include "dsp_ir.h"
 #include <vector>
 #include <memory>
 #include <map>

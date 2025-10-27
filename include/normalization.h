@@ -12,50 +12,30 @@ namespace aiaudio {
 class Normalizer {
 public:
     // MIDI to frequency conversion
-    static Hz midiToFreq(int midiNote) {
-        return Hz{440.0 * std::pow(2.0, (midiNote - 69) / 12.0)};
-    }
+    static Hz midiToFreq(int midiNote) { return aiaudio::midiToFreq(midiNote); }
     
     // Frequency to MIDI conversion
-    static int freqToMidi(Hz freq) {
-        return static_cast<int>(12.0 * std::log2(freq.value / 440.0) + 69);
-    }
+    static int freqToMidi(Hz freq) { return static_cast<int>(12.0 * std::log2(freq.value / 440.0) + 69); }
     
     // Percent to perceptual mapping (log/ERB transforms)
-    static double percentToPerceptual(Percent percent) {
-        // ERB scale mapping
-        return 21.4 * std::log10(1.0 + 0.00437 * percent.value);
-    }
+    static double percentToPerceptual(Percent percent) { return 21.4 * std::log10(1.0 + 0.00437 * percent.value); }
     
     // Perceptual to percent mapping
-    static Percent perceptualToPercent(double perceptual) {
-        return Percent{(std::pow(10.0, perceptual / 21.4) - 1.0) / 0.00437};
-    }
+    static Percent perceptualToPercent(double perceptual) { return Percent{(std::pow(10.0, perceptual / 21.4) - 1.0) / 0.00437}; }
     
     // Amplitude dB to linear conversion
-    static double dbToLinear(dB db) {
-        return std::pow(10.0, db.value / 20.0);
-    }
+    static double dbToLinear(dB db) { return std::pow(10.0, db.value / 20.0); }
     
     // Linear to dB conversion
-    static dB linearToDb(double linear) {
-        return dB{20.0 * std::log10(std::max(linear, 1e-10))};
-    }
+    static dB linearToDb(double linear) { return dB{20.0 * std::log10(std::max(linear, 1e-10))}; }
     
     // Safe clamping functions
-    static double softLimit(double value, double threshold) {
-        if (std::abs(value) <= threshold) return value;
-        return threshold * std::tanh(value / threshold);
-    }
+    static double softLimit(double value, double threshold) { return (std::abs(value) <= threshold) ? value : threshold * std::tanh(value / threshold); }
     
-    static double hardLimit(double value, double minVal, double maxVal) {
-        return std::clamp(value, minVal, maxVal);
-    }
+    static double hardLimit(double value, double minVal, double maxVal) { return std::clamp(value, minVal, maxVal); }
     
     // Anti-denormal offset
-    static double addAntiDenormal(double value, double offset = 1e-20) {
-        return value + offset;
-    }
+    static double addAntiDenormal(double value, double offset = 1e-20) { return value + offset; }
     
     // Normalize audio buffer
     static void normalizeBuffer(AudioBuffer& buffer, dB targetLevel = dB{-18.0}) {
@@ -63,16 +43,17 @@ public:
         
         // Find peak
         double peak = 0.0;
-        for (double sample : buffer) {
-            peak = std::max(peak, std::abs(sample));
+        for (auto sample : buffer) {
+            double d = static_cast<double>(sample);
+            peak = std::max(peak, std::abs(d));
         }
         
         if (peak > 0.0) {
             double targetLinear = dbToLinear(targetLevel);
             double gain = targetLinear / peak;
             
-            for (double& sample : buffer) {
-                sample *= gain;
+            for (auto& sample : buffer) {
+                sample = static_cast<float>(static_cast<double>(sample) * gain);
             }
         }
     }
@@ -83,8 +64,9 @@ public:
         
         // Calculate RMS
         double sum = 0.0;
-        for (double sample : buffer) {
-            sum += sample * sample;
+        for (auto sample : buffer) {
+            double d = static_cast<double>(sample);
+            sum += d * d;
         }
         double rms = std::sqrt(sum / buffer.size());
         
@@ -92,8 +74,8 @@ public:
             double targetLinear = dbToLinear(targetLevel);
             double gain = targetLinear / rms;
             
-            for (double& sample : buffer) {
-                sample *= gain;
+            for (auto& sample : buffer) {
+                sample = static_cast<float>(static_cast<double>(sample) * gain);
             }
         }
     }
@@ -209,7 +191,7 @@ public:
     };
     
     // Create snapshot of current state
-    Snapshot createSnapshot(const NormalizedPreset& preset) const;
+    Snapshot createSnapshot(const PresetNormalizer::NormalizedPreset& preset) const;
     
     // Compare snapshots
     bool compareSnapshots(const Snapshot& a, const Snapshot& b, double tolerance = 1e-6) const;
@@ -235,24 +217,24 @@ class MusicalNormalizer {
 public:
     // Tempo-based time normalization
     static Seconds tempoToTime(double beats, FrequencyHz tempo) {
-        return Seconds{beats * 60.0 / tempo.value};
+        return Seconds{beats * 60.0 / tempo};
     }
     
     // Time to tempo-based beats
     static double timeToTempo(Seconds time, FrequencyHz tempo) {
-        return time.value * tempo.value / 60.0;
+        return time.value * tempo / 60.0;
     }
     
     // Musical division snapping
     static double snapToMusicalDivision(double time, FrequencyHz tempo, double division) {
-        double beatTime = 60.0 / tempo.value;
+        double beatTime = 60.0 / tempo;
         double divisionTime = beatTime / division;
         return std::round(time / divisionTime) * divisionTime;
     }
     
     // Key-aware pitch shifting
     static Hz shiftPitchInKey(Hz originalFreq, int semitones, int key, const std::string& scale) {
-        int midiNote = freqToMidi(originalFreq);
+        int midiNote = Normalizer::freqToMidi(originalFreq);
         int shiftedMidi = midiNote + semitones;
         
         // Ensure note is in key/scale

@@ -47,30 +47,48 @@ A research-grade, production-minded, over-engineered AI audio generation system 
 
 - C++20 compatible compiler (GCC 10+, Clang 12+, MSVC 2019+)
 - CMake 3.20+
-- OpenCV 4.x
-- nlohmann/json
-- yaml-cpp
+- Ninja (optional; recommended)
+
+Notes:
+- nlohmann/json and yaml-cpp are vendored automatically with FetchContent if not present.
+- OpenCV is no longer required.
 
 ### Build Instructions
 
+Preferred (CMake presets):
 ```bash
-mkdir build
-cd build
-cmake ..
-make -j$(nproc)
+cmake --preset ninja-release
+cmake --build --preset ninja-release
+ctest --preset ninja-release --output-on-failure
+```
+
+MSYS2 MinGW Makefiles (Windows):
+```bash
+cmake --preset mingw-make-release
+cmake --build --preset mingw-make-release
+ctest --preset mingw-make-release --output-on-failure
+```
+
+Fallback (no presets):
+```bash
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+cmake --build . -- -j
+ctest --output-on-failure
 ```
 
 ### Dependencies
 
+Dependencies are fetched automatically if missing. Optional manual install:
 ```bash
-# Ubuntu/Debian
-sudo apt-get install libopencv-dev nlohmann-json3-dev libyaml-cpp-dev
+# Ubuntu/Debian (optional)
+sudo apt-get install nlohmann-json3-dev libyaml-cpp-dev
 
-# macOS
-brew install opencv nlohmann-json yaml-cpp
+# macOS (optional)
+brew install nlohmann-json yaml-cpp
 
-# Windows (vcpkg)
-vcpkg install opencv nlohmann-json yaml-cpp
+# Windows (vcpkg optional)
+vcpkg install nlohmann-json yaml-cpp
 ```
 
 ## Usage

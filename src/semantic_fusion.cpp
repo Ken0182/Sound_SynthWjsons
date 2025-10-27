@@ -7,7 +7,7 @@
 namespace aiaudio {
 
 // TagSystem implementation
-void TagSystem::addTag(const std::string& name, const EmbeddingVector& embedding, 
+void TagSystem::addTag(const std::string& name, const SemanticEmbedding::EmbeddingVector& embedding, 
                       const std::string& category, double weight) {
     Tag tag;
     tag.name = name;
@@ -73,22 +73,22 @@ SemanticFusionEngine::SemanticFusionEngine(std::unique_ptr<SemanticEmbedding> em
     : embedding_(std::move(embedding)) {
 }
 
-EmbeddingVector SemanticFusionEngine::composeContrastive(const std::string& query,
+SemanticEmbedding::EmbeddingVector SemanticFusionEngine::composeContrastive(const std::string& query,
                                                         const std::vector<std::string>& positiveTags,
                                                         const std::vector<std::string>& negativeTags,
                                                         double alpha,
                                                         double beta) const {
     // Encode base query
-    EmbeddingVector queryVec = embedding_->encode(query);
+    SemanticEmbedding::EmbeddingVector queryVec = embedding_->encode(query);
     
     // Add positive tags
-    EmbeddingVector posVec = queryVec;
+    SemanticEmbedding::EmbeddingVector posVec = queryVec;
     if (!positiveTags.empty()) {
-        std::vector<EmbeddingVector> posEmbeddings;
+        std::vector<SemanticEmbedding::EmbeddingVector> posEmbeddings;
         for (const auto& tag : positiveTags) {
             posEmbeddings.push_back(embedding_->encode(tag));
         }
-        EmbeddingVector avgPos = averageEmbeddings(posEmbeddings);
+        SemanticEmbedding::EmbeddingVector avgPos = averageEmbeddings(posEmbeddings);
         
         // Weighted combination
         for (size_t i = 0; i < queryVec.size(); ++i) {
@@ -97,13 +97,13 @@ EmbeddingVector SemanticFusionEngine::composeContrastive(const std::string& quer
     }
     
     // Subtract negative tags
-    EmbeddingVector result = posVec;
+    SemanticEmbedding::EmbeddingVector result = posVec;
     if (!negativeTags.empty()) {
-        std::vector<EmbeddingVector> negEmbeddings;
+        std::vector<SemanticEmbedding::EmbeddingVector> negEmbeddings;
         for (const auto& tag : negativeTags) {
             negEmbeddings.push_back(embedding_->encode(tag));
         }
-        EmbeddingVector avgNeg = averageEmbeddings(negEmbeddings);
+        SemanticEmbedding::EmbeddingVector avgNeg = averageEmbeddings(negEmbeddings);
         
         // Subtract negative influence
         for (size_t i = 0; i < result.size(); ++i) {
@@ -114,14 +114,14 @@ EmbeddingVector SemanticFusionEngine::composeContrastive(const std::string& quer
     return SemanticEmbedding::normalize(result);
 }
 
-double SemanticFusionEngine::semanticScore(const EmbeddingVector& query, 
-                                          const EmbeddingVector& entry) const {
+double SemanticFusionEngine::semanticScore(const SemanticEmbedding::EmbeddingVector& query, 
+                                         const SemanticEmbedding::EmbeddingVector& entry) const {
     double cosineSim = SemanticEmbedding::cosineSimilarity(query, entry);
     return std::clamp(cosineSim, 0.0, 1.0);
 }
 
-double SemanticFusionEngine::semanticScoreWeighted(const EmbeddingVector& query, 
-                                                  const EmbeddingVector& entry,
+double SemanticFusionEngine::semanticScoreWeighted(const SemanticEmbedding::EmbeddingVector& query, 
+                                                 const SemanticEmbedding::EmbeddingVector& entry,
                                                   const std::vector<double>& weights) const {
     if (query.size() != entry.size() || query.size() != weights.size()) {
         return 0.0;
@@ -145,10 +145,10 @@ double SemanticFusionEngine::semanticScoreWeighted(const EmbeddingVector& query,
     return weightedDot / (std::sqrt(queryNorm) * std::sqrt(entryNorm));
 }
 
-EmbeddingVector SemanticFusionEngine::processEntry(const std::vector<std::string>& tags,
-                                                  const std::string& description,
-                                                  double delta) const {
-    std::vector<EmbeddingVector> tagEmbeddings;
+SemanticEmbedding::EmbeddingVector SemanticFusionEngine::processEntry(const std::vector<std::string>& tags,
+                                                 const std::string& description,
+                                                 double delta) const {
+    std::vector<SemanticEmbedding::EmbeddingVector> tagEmbeddings;
     
     // Encode tags
     for (const auto& tag : tags) {
@@ -156,13 +156,13 @@ EmbeddingVector SemanticFusionEngine::processEntry(const std::vector<std::string
     }
     
     // Average tag embeddings
-    EmbeddingVector tagVec = averageEmbeddings(tagEmbeddings);
+    SemanticEmbedding::EmbeddingVector tagVec = averageEmbeddings(tagEmbeddings);
     
     // Encode description
-    EmbeddingVector descVec = embedding_->encode(description);
+    SemanticEmbedding::EmbeddingVector descVec = embedding_->encode(description);
     
     // Combine with delta weighting
-    EmbeddingVector result = tagVec;
+    SemanticEmbedding::EmbeddingVector result = tagVec;
     for (size_t i = 0; i < result.size(); ++i) {
         result[i] = result[i] + delta * descVec[i];
     }
@@ -170,8 +170,8 @@ EmbeddingVector SemanticFusionEngine::processEntry(const std::vector<std::string
     return SemanticEmbedding::normalize(result);
 }
 
-std::vector<std::string> SemanticFusionEngine::getContributingTags(const EmbeddingVector& query,
-                                                                 const EmbeddingVector& entry,
+std::vector<std::string> SemanticFusionEngine::getContributingTags(const SemanticEmbedding::EmbeddingVector& query,
+                                                                const SemanticEmbedding::EmbeddingVector& entry,
                                                                  double threshold) const {
     std::vector<std::string> contributing;
     
@@ -195,12 +195,12 @@ std::vector<double> SemanticFusionEngine::getRoleWeights(Role role) const {
     return std::vector<double>(embedding_->getDimension(), 1.0);
 }
 
-EmbeddingVector SemanticFusionEngine::averageEmbeddings(const std::vector<EmbeddingVector>& embeddings) const {
+SemanticEmbedding::EmbeddingVector SemanticFusionEngine::averageEmbeddings(const std::vector<SemanticEmbedding::EmbeddingVector>& embeddings) const {
     if (embeddings.empty()) {
-        return EmbeddingVector(embedding_->getDimension(), 0.0);
+        return SemanticEmbedding::EmbeddingVector(embedding_->getDimension(), 0.0);
     }
     
-    EmbeddingVector result(embeddings[0].size(), 0.0);
+    SemanticEmbedding::EmbeddingVector result(embeddings[0].size(), 0.0);
     
     for (const auto& embedding : embeddings) {
         for (size_t i = 0; i < result.size(); ++i) {
@@ -235,24 +235,24 @@ std::vector<std::string> SemanticFusionEngine::tokenize(const std::string& text)
 }
 
 // EntryVectorBuilder implementation
-EmbeddingVector EntryVectorBuilder::buildEntryVector(const EntryData& data, 
+SemanticEmbedding::EmbeddingVector EntryVectorBuilder::buildEntryVector(const EntryData& data, 
                                                     const SemanticFusionEngine& engine) const {
     // Process tags and description
-    EmbeddingVector baseVector = engine.processEntry(data.tags, data.description);
+    SemanticEmbedding::EmbeddingVector baseVector = engine.processEntry(data.tags, data.description);
     
     // Add metadata
-    EmbeddingVector withMetadata = addMetadata(baseVector, data.metadata);
+    SemanticEmbedding::EmbeddingVector withMetadata = addMetadata(baseVector, data.metadata);
     
     // Apply role weighting
-    EmbeddingVector finalVector = applyRoleWeighting(withMetadata, data.role);
+    SemanticEmbedding::EmbeddingVector finalVector = applyRoleWeighting(withMetadata, data.role);
     
     return finalVector;
 }
 
-EmbeddingVector EntryVectorBuilder::addMetadata(const EmbeddingVector& baseVector,
+SemanticEmbedding::EmbeddingVector EntryVectorBuilder::addMetadata(const SemanticEmbedding::EmbeddingVector& baseVector,
                                                const std::map<std::string, double>& metadata) const {
     // Simple metadata encoding (in practice would be more sophisticated)
-    EmbeddingVector result = baseVector;
+    SemanticEmbedding::EmbeddingVector result = baseVector;
     
     // Add metadata as additional dimensions or modify existing ones
     // This is a simplified implementation
@@ -260,21 +260,21 @@ EmbeddingVector EntryVectorBuilder::addMetadata(const EmbeddingVector& baseVecto
     return result;
 }
 
-EmbeddingVector EntryVectorBuilder::applyRoleWeighting(const EmbeddingVector& vector, Role role) const {
+SemanticEmbedding::EmbeddingVector EntryVectorBuilder::applyRoleWeighting(const SemanticEmbedding::EmbeddingVector& vector, Role role) const {
     // Apply role-specific weighting
     // This would use learned weights for each role
     
     return vector;
 }
 
-EmbeddingVector EntryVectorBuilder::encodeMetadata(const std::map<std::string, double>& metadata) const {
+SemanticEmbedding::EmbeddingVector EntryVectorBuilder::encodeMetadata(const std::map<std::string, double>& metadata) const {
     // Encode metadata into embedding space
     // This is a placeholder implementation
     
-    return EmbeddingVector(384, 0.0); // Default dimension
+    return SemanticEmbedding::EmbeddingVector(384, 0.0); // Default dimension
 }
 
-EmbeddingVector EntryVectorBuilder::processForRole(const EmbeddingVector& vector, Role role) const {
+SemanticEmbedding::EmbeddingVector EntryVectorBuilder::processForRole(const SemanticEmbedding::EmbeddingVector& vector, Role role) const {
     // Role-specific processing
     // This would apply role-specific transformations
     
@@ -294,7 +294,7 @@ void SemanticSearchEngine::addEntry(const EntryVectorBuilder::EntryData& data) {
 std::vector<SemanticSearchEngine::SearchResult> SemanticSearchEngine::search(const std::string& query,
                                                                             Role role,
                                                                             size_t maxResults) const {
-    EmbeddingVector queryVec = fusionEngine_->embedding_->encode(query);
+    SemanticEmbedding::EmbeddingVector queryVec = fusionEngine_->composeContrastive(query, {}, {}, 0.0, 1.0);
     
     std::vector<std::string> entryIds;
     for (const auto& [id, data] : entries_) {
@@ -313,7 +313,7 @@ std::vector<SemanticSearchEngine::SearchResult> SemanticSearchEngine::searchCont
     Role role,
     size_t maxResults) const {
     
-    EmbeddingVector queryVec = fusionEngine_->composeContrastive(query, positiveTags, negativeTags);
+    SemanticEmbedding::EmbeddingVector queryVec = fusionEngine_->composeContrastive(query, positiveTags, negativeTags);
     
     std::vector<std::string> entryIds;
     for (const auto& [id, data] : entries_) {
@@ -360,7 +360,7 @@ size_t SemanticSearchEngine::getEntryCount() const {
 
 std::vector<SemanticSearchEngine::SearchResult> SemanticSearchEngine::rankResults(
     const std::vector<std::string>& entryIds,
-    const EmbeddingVector& queryVector,
+    const SemanticEmbedding::EmbeddingVector& queryVector,
     Role role) const {
     
     std::vector<SearchResult> results;
@@ -389,7 +389,7 @@ std::vector<SemanticSearchEngine::SearchResult> SemanticSearchEngine::rankResult
 }
 
 std::string SemanticSearchEngine::generateExplanation(const SearchResult& result,
-                                                     const EmbeddingVector& queryVector) const {
+                                                    const SemanticEmbedding::EmbeddingVector& queryVector) const {
     // Generate human-readable explanation
     std::stringstream explanation;
     explanation << "This entry matches your query with a semantic similarity of " 
@@ -399,11 +399,11 @@ std::string SemanticSearchEngine::generateExplanation(const SearchResult& result
 }
 
 // AdvancedSemanticFeatures implementation
-EmbeddingVector AdvancedSemanticFeatures::applyDimensionWeights(const EmbeddingVector& vector,
+SemanticEmbedding::EmbeddingVector AdvancedSemanticFeatures::applyDimensionWeights(const SemanticEmbedding::EmbeddingVector& vector,
                                                                const std::vector<double>& weights) {
     if (vector.size() != weights.size()) return vector;
     
-    EmbeddingVector result = vector;
+    SemanticEmbedding::EmbeddingVector result = vector;
     for (size_t i = 0; i < result.size(); ++i) {
         result[i] *= weights[i];
     }
@@ -411,8 +411,8 @@ EmbeddingVector AdvancedSemanticFeatures::applyDimensionWeights(const EmbeddingV
     return SemanticEmbedding::normalize(result);
 }
 
-EmbeddingVector AdvancedSemanticFeatures::applyDiagonalMatrix(const EmbeddingVector& vector,
-                                                            const std::vector<double>& diagonal) {
+SemanticEmbedding::EmbeddingVector AdvancedSemanticFeatures::applyDiagonalMatrix(const SemanticEmbedding::EmbeddingVector& vector,
+                                                           const std::vector<double>& diagonal) {
     return applyDimensionWeights(vector, diagonal);
 }
 
@@ -531,9 +531,9 @@ bool SemanticTester::testSemanticConsistency(const SemanticFusionEngine& engine)
         "ethereal pad"
     };
     
-    std::vector<EmbeddingVector> queryVectors;
+std::vector<SemanticEmbedding::EmbeddingVector> queryVectors;
     for (const auto& query : similarQueries) {
-        queryVectors.push_back(engine.embedding_->encode(query));
+        queryVectors.push_back(engine.composeContrastive(query, {}, {}, 0.0, 1.0));
     }
     
     double consistency = computeSemanticConsistency(queryVectors);
@@ -598,7 +598,7 @@ bool SemanticTester::checkMonotonicity(const std::vector<double>& scores) const 
     return true;
 }
 
-double SemanticTester::computeSemanticConsistency(const std::vector<EmbeddingVector>& vectors) const {
+double SemanticTester::computeSemanticConsistency(const std::vector<SemanticEmbedding::EmbeddingVector>& vectors) const {
     if (vectors.size() < 2) return 1.0;
     
     double totalSimilarity = 0.0;
