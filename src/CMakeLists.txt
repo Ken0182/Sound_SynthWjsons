@@ -1,88 +1,68 @@
-# Source files CMakeLists.txt
+# AI Synthesizer Source CMakeLists.txt
 
-# Create the main library
-add_library(aiaudio_core
-    audio_safety.cpp
-    moo_optimization.cpp
+# Create the core library
+add_library(aiaudio_core STATIC
     dsp_ir.cpp
-    normalization.cpp
-    semantic_fusion.cpp
-    roles_policies.cpp
-    decision_heads.cpp
     main_app.cpp
 )
 
+# Set target properties
+target_include_directories(aiaudio_core PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/third_party
+)
+
 # Link libraries
-target_link_libraries(aiaudio_core
-    ${JSONCPP_LIBRARIES}
+target_link_libraries(aiaudio_core PUBLIC
     ${YAMLCPP_LIBRARIES}
     Threads::Threads
 )
 
-# Link math library on non-Windows
-if(UNIX AND NOT APPLE)
-    target_link_libraries(aiaudio_core m)
-endif()
-
-# Include directories
-target_include_directories(aiaudio_core PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
-    ${JSONCPP_INCLUDE_DIRS}
+# Create the main executable
+add_executable(aiaudio_generator
+    main.cpp
 )
 
-# Create the main executable
-add_executable(aiaudio_generator main.cpp)
+# Link the core library
+target_link_libraries(aiaudio_generator PRIVATE
+    aiaudio_core
+)
 
-# Link with the core library
-target_link_libraries(aiaudio_generator aiaudio_core)
+# Set target properties
+target_include_directories(aiaudio_generator PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/third_party
+)
 
-# Set C++ standard
+# Platform-specific linking
+if(WIN32)
+    if(MINGW)
+        target_link_libraries(aiaudio_generator PRIVATE m)
+    endif()
+elseif(UNIX AND NOT APPLE)
+    target_link_libraries(aiaudio_generator PRIVATE m)
+endif()
+
+# Set output directories
 set_target_properties(aiaudio_core PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED ON
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
 
 set_target_properties(aiaudio_generator PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED ON
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-# Compiler flags
-if(NOT MSVC)
-    target_compile_options(aiaudio_core PRIVATE
-        -Wall -Wextra -Wpedantic
-        -O3 -ffast-math
-    )
-    # Only enable -march=native when not cross-compiling
-    if(CMAKE_SYSTEM_PROCESSOR)
-        target_compile_options(aiaudio_core PRIVATE -march=native)
-    endif()
-endif()
-
-if(NOT MSVC)
-    target_compile_options(aiaudio_generator PRIVATE
-        -Wall -Wextra -Wpedantic
-        -O3 -ffast-math
-    )
-    if(CMAKE_SYSTEM_PROCESSOR)
-        target_compile_options(aiaudio_generator PRIVATE -march=native)
-    endif()
-endif()
-
-# Optional: Python bindings via pybind11
-find_package(pybind11 CONFIG QUIET)
-if(pybind11_FOUND)
-    message(STATUS "pybind11 found: enabling Python bindings")
-    pybind11_add_module(aiaudio_python
-        python_bindings.cpp
-    )
-    target_link_libraries(aiaudio_python PRIVATE aiaudio_core)
-    target_include_directories(aiaudio_python PRIVATE ${CMAKE_SOURCE_DIR}/include)
-
-    # Define for Windows DLL export quirks if needed
-    if(WIN32)
-        target_compile_definitions(aiaudio_python PRIVATE _USE_MATH_DEFINES)
-    endif()
+# Compiler-specific options
+if(MSVC)
+    target_compile_options(aiaudio_core PRIVATE /W4)
+    target_compile_options(aiaudio_generator PRIVATE /W4)
 else()
-    message(STATUS "pybind11 not found: skipping Python bindings")
+    target_compile_options(aiaudio_core PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(aiaudio_generator PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+# Debug information
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_definitions(aiaudio_core PRIVATE DEBUG=1)
+    target_compile_definitions(aiaudio_generator PRIVATE DEBUG=1)
 endif()

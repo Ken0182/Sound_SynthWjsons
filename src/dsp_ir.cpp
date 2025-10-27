@@ -4,32 +4,24 @@
 #include <queue>
 #include <sstream>
 #include <fstream>
-#if __has_include(<json/json.h>)
-#  include <json/json.h>
-#elif __has_include(<jsoncpp/json/json.h>)
-#  include <jsoncpp/json/json.h>
-#else
-#  error "jsoncpp headers not found. Install jsoncpp development package."
-#endif
 
 namespace aiaudio {
 
 // OscillatorStage implementation
-OscillatorStage::OscillatorStage() : frequency_(Hz{440.0}, Hz{20.0}, Hz{20000.0}, "frequency"),
-                                    amplitude_(Percent{0.5}, Percent{0.0}, Percent{1.0}, "amplitude"),
-                                    phase_(Percent{0.0}, Percent{0.0}, Percent{1.0}, "phase") {
+OscillatorStage::OscillatorStage() {
+    // Initialize with default values
 }
 
 void OscillatorStage::process(const AudioBuffer& input, AudioBuffer& output) {
     output.resize(input.size());
     
-    double phaseIncrement = 2.0 * M_PI * frequency_.value.value / sampleRate_;
+    double phaseIncrement = 2.0 * M_PI * frequency_ / 44100.0;
     
     for (size_t i = 0; i < input.size(); ++i) {
         double sample = 0.0;
         
         if (waveType_ == "sine") {
-            sample = std::sin(phaseAccumulator_ + phase_.value.value * 2.0 * M_PI);
+            sample = std::sin(phaseAccumulator_ + phase_ * 2.0 * M_PI);
         } else if (waveType_ == "saw") {
             sample = 2.0 * (phaseAccumulator_ / (2.0 * M_PI)) - 1.0;
         } else if (waveType_ == "square") {
@@ -42,7 +34,7 @@ void OscillatorStage::process(const AudioBuffer& input, AudioBuffer& output) {
             }
         }
         
-        output[i] = sample * amplitude_.value.value + input[i];
+        output[i] = sample * amplitude_ + input[i];
         phaseAccumulator_ += phaseIncrement;
         
         // Wrap phase
@@ -54,20 +46,20 @@ void OscillatorStage::process(const AudioBuffer& input, AudioBuffer& output) {
 
 void OscillatorStage::setParameter(const std::string& name, const ParamValue& value) {
     if (name == "frequency") {
-        frequency_.setValue(Hz{std::get<double>(value)});
+        frequency_ = std::get<double>(value);
     } else if (name == "amplitude") {
-        amplitude_.setValue(Percent{std::get<double>(value)});
+        amplitude_ = std::get<double>(value);
     } else if (name == "phase") {
-        phase_.setValue(Percent{std::get<double>(value)});
+        phase_ = std::get<double>(value);
     } else if (name == "waveType") {
         waveType_ = std::get<std::string>(value);
     }
 }
 
 ParamValue OscillatorStage::getParameter(const std::string& name) const {
-    if (name == "frequency") return frequency_.value.value;
-    if (name == "amplitude") return amplitude_.value.value;
-    if (name == "phase") return phase_.value.value;
+    if (name == "frequency") return frequency_;
+    if (name == "amplitude") return amplitude_;
+    if (name == "phase") return phase_;
     if (name == "waveType") return waveType_;
     return 0.0;
 }
@@ -81,22 +73,22 @@ void OscillatorStage::reset() {
 }
 
 std::string OscillatorStage::getDescription() const {
-    return "Oscillator: " + waveType_ + " wave at " + std::to_string(frequency_.value.value) + " Hz";
+    return "Oscillator: " + waveType_ + " wave at " + std::to_string(frequency_) + " Hz";
 }
 
 // FilterStage implementation
-FilterStage::FilterStage() : cutoff_(Hz{1000.0}, Hz{20.0}, Hz{20000.0}, "cutoff"),
-                           resonance_(0.1, 0.0, 0.99, "resonance") {
+FilterStage::FilterStage() {
+    // Initialize with default values
 }
 
 void FilterStage::process(const AudioBuffer& input, AudioBuffer& output) {
     output.resize(input.size());
     
     // Simple biquad filter implementation
-    double w = 2.0 * M_PI * cutoff_.value.value / 44100.0;
+    double w = 2.0 * M_PI * cutoff_ / 44100.0;
     double cosw = std::cos(w);
     double sinw = std::sin(w);
-    double alpha = sinw / (2.0 * resonance_.value);
+    double alpha = sinw / (2.0 * resonance_);
     
     double b0 = (1.0 - cosw) / 2.0;
     double b1 = 1.0 - cosw;
@@ -123,17 +115,17 @@ void FilterStage::process(const AudioBuffer& input, AudioBuffer& output) {
 
 void FilterStage::setParameter(const std::string& name, const ParamValue& value) {
     if (name == "cutoff") {
-        cutoff_.setValue(Hz{std::get<double>(value)});
+        cutoff_ = std::get<double>(value);
     } else if (name == "resonance") {
-        resonance_.setValue(std::get<double>(value));
+        resonance_ = std::get<double>(value);
     } else if (name == "filterType") {
         filterType_ = std::get<std::string>(value);
     }
 }
 
 ParamValue FilterStage::getParameter(const std::string& name) const {
-    if (name == "cutoff") return cutoff_.value.value;
-    if (name == "resonance") return resonance_.value;
+    if (name == "cutoff") return cutoff_;
+    if (name == "resonance") return resonance_;
     if (name == "filterType") return filterType_;
     return 0.0;
 }
@@ -147,14 +139,12 @@ void FilterStage::reset() {
 }
 
 std::string FilterStage::getDescription() const {
-    return "Filter: " + filterType_ + " at " + std::to_string(cutoff_.value.value) + " Hz";
+    return "Filter: " + filterType_ + " at " + std::to_string(cutoff_) + " Hz";
 }
 
 // EnvelopeStage implementation
-EnvelopeStage::EnvelopeStage() : attack_(Seconds{0.01}, Seconds{0.001}, Seconds{2.0}, "attack"),
-                                decay_(Seconds{0.1}, Seconds{0.001}, Seconds{2.0}, "decay"),
-                                sustain_(Percent{0.7}, Percent{0.0}, Percent{1.0}, "sustain"),
-                                release_(Seconds{0.5}, Seconds{0.001}, Seconds{5.0}, "release") {
+EnvelopeStage::EnvelopeStage() {
+    // Initialize with default values
 }
 
 void EnvelopeStage::process(const AudioBuffer& input, AudioBuffer& output) {
@@ -167,13 +157,13 @@ void EnvelopeStage::process(const AudioBuffer& input, AudioBuffer& output) {
             state_ = EnvState::ATTACK;
             currentLevel_ = 0.0;
             targetLevel_ = 1.0;
-            rate_ = 1.0 / (attack_.value.value * 44100.0);
+            rate_ = 1.0 / (attack_ * 44100.0);
             sampleCount_ = 0;
         } else if (input[i] <= 0.001 && state_ != EnvState::IDLE && state_ != EnvState::RELEASE) {
             // Gate off
             state_ = EnvState::RELEASE;
             targetLevel_ = 0.0;
-            rate_ = 1.0 / (release_.value.value * 44100.0);
+            rate_ = 1.0 / (release_ * 44100.0);
             sampleCount_ = 0;
         }
         
@@ -184,22 +174,22 @@ void EnvelopeStage::process(const AudioBuffer& input, AudioBuffer& output) {
                 if (currentLevel_ >= 1.0) {
                     currentLevel_ = 1.0;
                     state_ = EnvState::DECAY;
-                    targetLevel_ = sustain_.value.value;
-                    rate_ = (1.0 - sustain_.value.value) / (decay_.value.value * 44100.0);
+                    targetLevel_ = sustain_;
+                    rate_ = (1.0 - sustain_) / (decay_ * 44100.0);
                     sampleCount_ = 0;
                 }
                 break;
                 
             case EnvState::DECAY:
                 currentLevel_ -= rate_;
-                if (currentLevel_ <= sustain_.value.value) {
-                    currentLevel_ = sustain_.value.value;
+                if (currentLevel_ <= sustain_) {
+                    currentLevel_ = sustain_;
                     state_ = EnvState::SUSTAIN;
                 }
                 break;
                 
             case EnvState::SUSTAIN:
-                currentLevel_ = sustain_.value.value;
+                currentLevel_ = sustain_;
                 break;
                 
             case EnvState::RELEASE:
@@ -222,21 +212,21 @@ void EnvelopeStage::process(const AudioBuffer& input, AudioBuffer& output) {
 
 void EnvelopeStage::setParameter(const std::string& name, const ParamValue& value) {
     if (name == "attack") {
-        attack_.setValue(Seconds{std::get<double>(value)});
+        attack_ = std::get<double>(value);
     } else if (name == "decay") {
-        decay_.setValue(Seconds{std::get<double>(value)});
+        decay_ = std::get<double>(value);
     } else if (name == "sustain") {
-        sustain_.setValue(Percent{std::get<double>(value)});
+        sustain_ = std::get<double>(value);
     } else if (name == "release") {
-        release_.setValue(Seconds{std::get<double>(value)});
+        release_ = std::get<double>(value);
     }
 }
 
 ParamValue EnvelopeStage::getParameter(const std::string& name) const {
-    if (name == "attack") return attack_.value.value;
-    if (name == "decay") return decay_.value.value;
-    if (name == "sustain") return sustain_.value.value;
-    if (name == "release") return release_.value.value;
+    if (name == "attack") return attack_;
+    if (name == "decay") return decay_;
+    if (name == "sustain") return sustain_;
+    if (name == "release") return release_;
     return 0.0;
 }
 
@@ -253,21 +243,21 @@ void EnvelopeStage::reset() {
 }
 
 std::string EnvelopeStage::getDescription() const {
-    return "Envelope: A=" + std::to_string(attack_.value.value) + 
-           "s D=" + std::to_string(decay_.value.value) + 
-           "s S=" + std::to_string(sustain_.value.value) + 
-           " R=" + std::to_string(release_.value.value) + "s";
+    return "Envelope: A=" + std::to_string(attack_) + 
+           "s D=" + std::to_string(decay_) + 
+           "s S=" + std::to_string(sustain_) + 
+           " R=" + std::to_string(release_) + "s";
 }
 
 // LFOStage implementation
-LFOStage::LFOStage() : rate_(Hz{1.0}, Hz{0.01}, Hz{20.0}, "rate"),
-                      depth_(Percent{0.5}, Percent{0.0}, Percent{1.0}, "depth") {
+LFOStage::LFOStage() {
+    // Initialize with default values
 }
 
 void LFOStage::process(const AudioBuffer& input, AudioBuffer& output) {
     output.resize(input.size());
     
-    double phaseIncrement = 2.0 * M_PI * rate_.value.value / sampleRate_;
+    double phaseIncrement = 2.0 * M_PI * rate_ / 44100.0;
     
     for (size_t i = 0; i < input.size(); ++i) {
         double lfoValue = 0.0;
@@ -287,7 +277,7 @@ void LFOStage::process(const AudioBuffer& input, AudioBuffer& output) {
         }
         
         // Scale by depth and center around 0
-        lfoValue = lfoValue * depth_.value.value;
+        lfoValue = lfoValue * depth_;
         
         output[i] = input[i] + lfoValue;
         phase_ += phaseIncrement;
@@ -301,17 +291,17 @@ void LFOStage::process(const AudioBuffer& input, AudioBuffer& output) {
 
 void LFOStage::setParameter(const std::string& name, const ParamValue& value) {
     if (name == "rate") {
-        rate_.setValue(Hz{std::get<double>(value)});
+        rate_ = std::get<double>(value);
     } else if (name == "depth") {
-        depth_.setValue(Percent{std::get<double>(value)});
+        depth_ = std::get<double>(value);
     } else if (name == "waveType") {
         waveType_ = std::get<std::string>(value);
     }
 }
 
 ParamValue LFOStage::getParameter(const std::string& name) const {
-    if (name == "rate") return rate_.value.value;
-    if (name == "depth") return depth_.value.value;
+    if (name == "rate") return rate_;
+    if (name == "depth") return depth_;
     if (name == "waveType") return waveType_;
     return 0.0;
 }
@@ -325,7 +315,7 @@ void LFOStage::reset() {
 }
 
 std::string LFOStage::getDescription() const {
-    return "LFO: " + waveType_ + " at " + std::to_string(rate_.value.value) + " Hz, depth " + std::to_string(depth_.value.value);
+    return "LFO: " + waveType_ + " at " + std::to_string(rate_) + " Hz, depth " + std::to_string(depth_);
 }
 
 // DSPGraph implementation
@@ -563,38 +553,34 @@ void DSPGraph::topologicalSortDFS(const std::string& node,
     result.push_back(node);
 }
 
-// IRParser implementation
+// IRParser implementation - Using portable JSON
 std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     auto graph = std::make_unique<DSPGraph>();
     
-    Json::Value root;
-    Json::Reader reader;
+    // Parse JSON using our portable implementation
+    nlohmann::json root = nlohmann::json_parser::parse(jsonData);
     
-    if (!reader.parse(jsonData, root)) {
-        throw AIAudioException("Failed to parse JSON: " + reader.getFormattedErrorMessages());
-    }
-    
-    // Parse stages
+    // Parse stages - using explicit string variables to avoid any string_view issues
     const std::string stages_key = "stages";
-    if (root.isMember(stages_key)) {
+    if (root.contains(stages_key)) {
         const auto& stages = root[stages_key];
-        for (const auto& stageName : stages.getMemberNames()) {
-            const auto& stageData = stages[stageName];
+        for (const auto& [stageName, stageData] : stages) {
             const std::string type_key = "type";
-            std::string type = stageData[type_key].asString();
+            std::string type = stageData[type_key].get_string();
             
             ParamMap params;
             const std::string parameters_key = "parameters";
-            if (stageData.isMember(parameters_key)) {
+            if (stageData.contains(parameters_key)) {
                 const auto& paramData = stageData[parameters_key];
-                for (const auto& paramName : paramData.getMemberNames()) {
-                    const auto& paramValue = paramData[paramName];
-                    if (paramValue.isDouble()) {
-                        params[paramName] = paramValue.asDouble();
-                    } else if (paramValue.isString()) {
-                        params[paramName] = paramValue.asString();
-                    } else if (paramValue.isBool()) {
-                        params[paramName] = paramValue.asBool();
+                for (const auto& [paramName, paramValue] : paramData) {
+                    if (paramValue.is_boolean()) {
+                        params[paramName] = paramValue.get_bool();
+                    } else if (paramValue.is_number_float()) {
+                        params[paramName] = paramValue.get_double();
+                    } else if (paramValue.is_number_integer()) {
+                        params[paramName] = static_cast<double>(paramValue.get_int());
+                    } else if (paramValue.is_string()) {
+                        params[paramName] = paramValue.get_string();
                     }
                 }
             }
@@ -606,26 +592,30 @@ std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     
     // Parse connections
     const std::string connections_key = "connections";
-    if (root.isMember(connections_key)) {
+    if (root.contains(connections_key)) {
         const auto& connections = root[connections_key];
         for (const auto& conn : connections) {
             Connection connection;
             const std::string source_key = "source";
             const std::string destination_key = "destination";
-            connection.source = conn[source_key].asString();
-            connection.destination = conn[destination_key].asString();
+            connection.source = conn[source_key].get_string();
+            connection.destination = conn[destination_key].get_string();
+            
             const std::string parameter_key = "parameter";
-            if (conn.isMember(parameter_key)) {
-                connection.parameter = conn[parameter_key].asString();
+            if (conn.contains(parameter_key)) {
+                connection.parameter = conn[parameter_key].get_string();
             }
+            
             const std::string amount_key = "amount";
-            if (conn.isMember(amount_key)) {
-                connection.amount = conn[amount_key].asDouble();
+            if (conn.contains(amount_key)) {
+                connection.amount = conn[amount_key].get_double();
             }
+            
             const std::string enabled_key = "enabled";
-            if (conn.isMember(enabled_key)) {
-                connection.enabled = conn[enabled_key].asBool();
+            if (conn.contains(enabled_key)) {
+                connection.enabled = conn[enabled_key].get_bool();
             }
+            
             graph->addConnection(connection);
         }
     }

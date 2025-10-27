@@ -1,0 +1,45 @@
+{
+  "stages": {
+    "osc1": {
+      "type": "oscillator",
+      "parameters": {
+        "frequency": 440.0,
+        "amplitude": 0.5,
+        "waveType": "sine"
+      }
+    },
+    "filter1": {
+      "type": "filter",
+      "parameters": {
+        "cutoff": 1000.0,
+        "resonance": 0.1,
+        "filterType": "lowpass"
+      }
+    },
+    "env1": {
+      "type": "envelope",
+      "parameters": {
+        "attack": 0.01,
+        "decay": 0.1,
+        "sustain": 0.7,
+        "release": 0.5
+      }
+    }
+  },
+  "connections": [
+    {
+      "source": "osc1",
+      "destination": "filter1",
+      "parameter": "input",
+      "amount": 1.0,
+      "enabled": true
+    },
+    {
+      "source": "filter1",
+      "destination": "env1",
+      "parameter": "input",
+      "amount": 1.0,
+      "enabled": true
+    }
+  ]
+}

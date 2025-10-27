@@ -1,0 +1,75 @@
+{
+  "stages": {
+    "osc1": {
+      "type": "oscillator",
+      "parameters": {
+        "frequency": 220.0,
+        "amplitude": 0.3,
+        "waveType": "saw"
+      }
+    },
+    "osc2": {
+      "type": "oscillator",
+      "parameters": {
+        "frequency": 330.0,
+        "amplitude": 0.2,
+        "waveType": "square"
+      }
+    },
+    "filter1": {
+      "type": "filter",
+      "parameters": {
+        "cutoff": 800.0,
+        "resonance": 0.3,
+        "filterType": "lowpass"
+      }
+    },
+    "lfo1": {
+      "type": "lfo",
+      "parameters": {
+        "rate": 2.0,
+        "depth": 0.1,
+        "waveType": "sine"
+      }
+    },
+    "env1": {
+      "type": "envelope",
+      "parameters": {
+        "attack": 0.05,
+        "decay": 0.2,
+        "sustain": 0.6,
+        "release": 1.0
+      }
+    }
+  },
+  "connections": [
+    {
+      "source": "osc1",
+      "destination": "filter1",
+      "parameter": "input",
+      "amount": 1.0,
+      "enabled": true
+    },
+    {
+      "source": "osc2",
+      "destination": "filter1",
+      "parameter": "input",
+      "amount": 0.8,
+      "enabled": true
+    },
+    {
+      "source": "lfo1",
+      "destination": "filter1",
+      "parameter": "cutoff",
+      "amount": 0.5,
+      "enabled": true
+    },
+    {
+      "source": "filter1",
+      "destination": "env1",
+      "parameter": "input",
+      "amount": 1.0,
+      "enabled": true
+    }
+  ]
+}

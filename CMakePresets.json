@@ -1,28 +1,123 @@
 {
-  "version": 6,
-  "cmakeMinimumRequired": { "major": 3, "minor": 20 },
-  "configurePresets": [
-    {
-      "name": "ninja-release",
-      "displayName": "Ninja - Release",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/ninja-release",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    },
-    {
-      "name": "msys2-mingw",
-      "displayName": "MSYS2 MinGW Makefiles",
-      "generator": "MinGW Makefiles",
-      "binaryDir": "${sourceDir}/build/mingw",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    }
-  ],
-  "buildPresets": [
-    { "name": "ninja-release", "configurePreset": "ninja-release" },
-    { "name": "msys2-mingw", "configurePreset": "msys2-mingw" }
-  ]
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "windows-msys2-mingw32",
+            "displayName": "Windows MSYS2 MinGW32",
+            "description": "Build for Windows using MSYS2 MinGW32",
+            "generator": "MinGW Makefiles",
+            "binaryDir": "${sourceDir}/build-msys2-mingw32",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_C_COMPILER": "gcc"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-msys2-mingw32-debug",
+            "displayName": "Windows MSYS2 MinGW32 Debug",
+            "description": "Debug build for Windows using MSYS2 MinGW32",
+            "generator": "MinGW Makefiles",
+            "binaryDir": "${sourceDir}/build-msys2-mingw32-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_C_COMPILER": "gcc"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "linux-gcc",
+            "displayName": "Linux GCC",
+            "description": "Build for Linux using GCC",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build-linux-gcc",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "macos-clang",
+            "displayName": "macOS Clang",
+            "description": "Build for macOS using Clang",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build-macos-clang",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "ninja-multi",
+            "displayName": "Ninja Multi-Config",
+            "description": "Build using Ninja with multi-config support",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build-ninja",
+            "condition": {
+                "type": "inList",
+                "variable": "CMAKE_GENERATOR",
+                "list": ["Ninja", "Ninja Multi-Config"]
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "windows-msys2-mingw32",
+            "configurePreset": "windows-msys2-mingw32",
+            "displayName": "Build Windows MSYS2 MinGW32",
+            "jobs": 4
+        },
+        {
+            "name": "windows-msys2-mingw32-debug",
+            "configurePreset": "windows-msys2-mingw32-debug",
+            "displayName": "Build Windows MSYS2 MinGW32 Debug",
+            "jobs": 4
+        },
+        {
+            "name": "linux-gcc",
+            "configurePreset": "linux-gcc",
+            "displayName": "Build Linux GCC",
+            "jobs": 4
+        },
+        {
+            "name": "macos-clang",
+            "configurePreset": "macos-clang",
+            "displayName": "Build macOS Clang",
+            "jobs": 4
+        },
+        {
+            "name": "ninja-multi",
+            "configurePreset": "ninja-multi",
+            "displayName": "Build Ninja Multi-Config",
+            "jobs": 4
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "default",
+            "displayName": "Default Tests",
+            "configurePreset": "windows-msys2-mingw32",
+            "output": {
+                "outputOnFailure": true
+            }
+        }
+    ]
 }

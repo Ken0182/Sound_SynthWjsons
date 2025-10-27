@@ -1,96 +1,51 @@
 #pragma once
 
 #include <vector>
-#include <array>
 #include <string>
 #include <map>
 #include <memory>
-#include <complex>
-#include <chrono>
-#include <random>
-#include <functional>
 #include <variant>
-#include <optional>
+#include <cmath>
 
 namespace aiaudio {
 
-// Core audio types
-using Sample = float;
-using AudioBuffer = std::vector<Sample>;
-using StereoBuffer = std::array<AudioBuffer, 2>;
-using ComplexSample = std::complex<Sample>;
+// Forward declarations
+class DSPStage;
+class DSPGraph;
 
-// Time and frequency types
-using TimeMs = double;
-using FrequencyHz = double;
-using Decibels = double;
-using Ratio = double;
-using Percentage = double;
+// Audio buffer type
+using AudioBuffer = std::vector<double>;
 
-// Strong typing for units
-struct Hz { 
-    double value; 
-    bool operator<(const Hz& other) const { return value < other.value; }
-    bool operator>(const Hz& other) const { return value > other.value; }
-};
-struct dB { 
-    double value; 
-    bool operator<(const dB& other) const { return value < other.value; }
-    bool operator>(const dB& other) const { return value > other.value; }
-};
-struct Seconds { 
-    double value; 
-    bool operator<(const Seconds& other) const { return value < other.value; }
-    bool operator>(const Seconds& other) const { return value > other.value; }
-};
-struct Percent { 
-    double value; 
-    bool operator<(const Percent& other) const { return value < other.value; }
-    bool operator>(const Percent& other) const { return value > other.value; }
-};
+// Parameter value type
+using ParamValue = std::variant<double, std::string, bool>;
 
-// Objective vector for MOO
-struct ObjectiveVector {
-    double semMatch = 0.0;        // s: Semantic match score
-    double mixReadiness = 0.0;    // m: Mix readiness score
-    double perceptualQuality = 0.0; // q: Perceptual quality score
-    double stability = 0.0;       // σ: Stability score
-    double preferenceWin = 0.0;   // p: Preference win probability
-    
-    double& operator[](size_t idx) {
-        switch(idx) {
-            case 0: return semMatch;
-            case 1: return mixReadiness;
-            case 2: return perceptualQuality;
-            case 3: return stability;
-            case 4: return preferenceWin;
-            default: throw std::out_of_range("Invalid objective index");
-        }
-    }
-    
-    const double& operator[](size_t idx) const {
-        return const_cast<ObjectiveVector*>(this)->operator[](idx);
-    }
-    
-    static constexpr size_t size() { return 5; }
+// Parameter map
+using ParamMap = std::map<std::string, ParamValue>;
+
+// Musical context
+struct MusicalContext {
+    double tempo = 120.0;        // BPM
+    int key = 0;                 // MIDI key (0-11)
+    std::string scale = "major"; // Scale type
+    double timeSignature = 4.0;  // Beats per measure
 };
 
 // Audio constraints
 struct AudioConstraints {
-    double maxCPU = 1.0;          // CPU budget (0-1)
-    TimeMs maxLatency = 10.0;     // Max latency in ms
-    bool noHardClips = true;      // No hard clipping allowed
-    Decibels truePeakLimit = -1.0; // True peak limit in dBTP
-    Decibels lufsTarget = -18.0;   // LUFS target
-    double crestFactorMin = 6.0;   // Min crest factor in dB
-    double crestFactorMax = 14.0;  // Max crest factor in dB
+    double maxCPU = 0.8;         // Maximum CPU usage (0.0-1.0)
+    double maxLatency = 10.0;    // Maximum latency in ms
+    bool noHardClips = true;     // Prevent hard clipping
+    double truePeakLimit = -1.0; // True peak limit in dB
+    double lufsTarget = -18.0;   // LUFS target
+    double crestFactorMin = 1.0; // Minimum crest factor
+    double crestFactorMax = 20.0; // Maximum crest factor
 };
 
-// Role definitions
+// Role enumeration
 enum class Role {
-    PAD,
-    BASS,
     LEAD,
+    BASS,
+    PAD,
     DRUM,
     PERCUSSION,
     AMBIENT,
@@ -98,58 +53,91 @@ enum class Role {
     UNKNOWN
 };
 
-// Musical context
-struct MusicalContext {
-    FrequencyHz tempo = 120.0;    // BPM
-    int key = 0;                  // MIDI key (0-11, C=0)
-    std::string scale = "major";  // Scale type
-    TimeMs timeSignature = 4.0;   // Time signature numerator
+// Role from string conversion
+inline Role roleFromString(const std::string& roleStr) {
+    if (roleStr == "lead") return Role::LEAD;
+    if (roleStr == "bass") return Role::BASS;
+    if (roleStr == "pad") return Role::PAD;
+    if (roleStr == "drum") return Role::DRUM;
+    if (roleStr == "percussion") return Role::PERCUSSION;
+    if (roleStr == "ambient") return Role::AMBIENT;
+    if (roleStr == "texture") return Role::TEXTURE;
+    return Role::UNKNOWN;
+}
+
+// Role to string conversion
+inline std::string roleToString(Role role) {
+    switch (role) {
+        case Role::LEAD: return "lead";
+        case Role::BASS: return "bass";
+        case Role::PAD: return "pad";
+        case Role::DRUM: return "drum";
+        case Role::PERCUSSION: return "percussion";
+        case Role::AMBIENT: return "ambient";
+        case Role::TEXTURE: return "texture";
+        default: return "unknown";
+    }
+}
+
+// Stage types
+enum class StageType {
+    OSCILLATOR,
+    FILTER,
+    ENVELOPE,
+    LFO,
+    EFFECT,
+    UNKNOWN
 };
 
-// Decision vector for ML heads
-struct DecisionVector {
-    std::vector<double> values;   // μ values [0,1]
-    std::vector<bool> routes;     // Routing mask
-    double confidence = 0.0;      // Overall confidence
+// Connection structure
+struct Connection {
+    std::string source;
+    std::string destination;
+    std::string parameter;
+    double amount = 1.0;
+    bool enabled = true;
 };
 
-// Trace for reproducibility
-struct Trace {
-    std::string prompt;
-    std::string queryHash;
-    std::string entryId;
-    DecisionVector decisions;
-    std::string policyVersion;
-    std::string budgetTier;
-    std::map<std::string, double> meters;
-    uint32_t seed = 0;
-    std::chrono::system_clock::time_point timestamp;
-};
-
-// Error handling
-class AIAudioException : public std::exception {
+// Exception class
+class AIAudioException : public std::runtime_error {
 public:
-    explicit AIAudioException(const std::string& msg) : message_(msg) {}
-    const char* what() const noexcept override { return message_.c_str(); }
-private:
-    std::string message_;
+    explicit AIAudioException(const std::string& message) 
+        : std::runtime_error(message) {}
 };
 
 // Utility functions
-inline Hz midiToFreq(int midiNote) {
-    return Hz{440.0 * std::pow(2.0, (midiNote - 69) / 12.0)};
-}
-
-inline dB linearToDb(double linear) {
-    return dB{20.0 * std::log10(std::max(linear, 1e-10))};
-}
-
-inline double dbToLinear(dB db) {
-    return std::pow(10.0, db.value / 20.0);
-}
-
-inline Percent percentToLinear(Percent p) {
-    return Percent{p.value / 100.0};
+namespace utils {
+    // Convert Hz to angular frequency
+    inline double hzToAngular(double hz) {
+        return 2.0 * M_PI * hz;
+    }
+    
+    // Convert angular frequency to Hz
+    inline double angularToHz(double angular) {
+        return angular / (2.0 * M_PI);
+    }
+    
+    // Clamp value between min and max
+    template<typename T>
+    T clamp(T value, T min, T max) {
+        return std::max(min, std::min(max, value));
+    }
+    
+    // Linear interpolation
+    template<typename T>
+    T lerp(T a, T b, double t) {
+        return a + t * (b - a);
+    }
+    
+    // Convert dB to linear
+    inline double dbToLinear(double db) {
+        return std::pow(10.0, db / 20.0);
+    }
+    
+    // Convert linear to dB
+    inline double linearToDb(double linear) {
+        return 20.0 * std::log10(std::max(linear, 1e-10));
+    }
 }
 
 } // namespace aiaudio

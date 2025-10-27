@@ -1,161 +1,87 @@
 #pragma once
 
 #include "core_types.h"
-#include <variant>
-#include <unordered_map>
-#include <unordered_set>
+#include "third_party/nlohmann/json.hpp"
 #include <memory>
-#include <string>
+#include <unordered_map>
 #include <vector>
-#include <functional>
+#include <string>
 
 namespace aiaudio {
 
-// DSP Intermediate Representation (IR) System
-
-// Ranged parameters with validation
-template<typename T>
-struct RangedParam {
-    T value;
-    T min;
-    T max;
-    std::string name;
-    
-    RangedParam(T val, T minVal, T maxVal, const std::string& paramName)
-        : value(val), min(minVal), max(maxVal), name(paramName) {
-        validate();
-    }
-    
-    void setValue(T val) {
-        value = val;
-        validate();
-    }
-    
-private:
-    void validate() {
-        if (value < min || value > max) {
-            throw AIAudioException("Parameter " + name + " out of range: " + 
-                                 std::to_string(getValueForString()) + " not in [" + 
-                                 std::to_string(getMinForString()) + ", " + std::to_string(getMaxForString()) + "]");
-        }
-    }
-    
-private:
-    double getValueForString() const {
-        if constexpr (std::is_same_v<T, double>) {
-            return value;
-        } else {
-            return value.value;
-        }
-    }
-    
-    double getMinForString() const {
-        if constexpr (std::is_same_v<T, double>) {
-            return min;
-        } else {
-            return min.value;
-        }
-    }
-    
-    double getMaxForString() const {
-        if constexpr (std::is_same_v<T, double>) {
-            return max;
-        } else {
-            return max.value;
-        }
-    }
-};
-
-// DSP Stage types
-enum class StageType {
-    OSCILLATOR,
-    SAMPLER,
-    WAVETABLE,
-    SHAPER,
-    FILTER,
-    SPATIAL,
-    EFFECT,
-    METER,
-    LIMITER,
-    ENVELOPE,
-    LFO,
-    MACRO
-};
-
-// Parameter types
-using ParamValue = std::variant<double, int, bool, std::string>;
-using ParamMap = std::unordered_map<std::string, ParamValue>;
-
-// Base stage interface
+// DSP Stage base class
 class DSPStage {
 public:
     virtual ~DSPStage() = default;
-    virtual StageType getType() const = 0;
+    
     virtual void process(const AudioBuffer& input, AudioBuffer& output) = 0;
     virtual void setParameter(const std::string& name, const ParamValue& value) = 0;
     virtual ParamValue getParameter(const std::string& name) const = 0;
     virtual std::vector<std::string> getParameterNames() const = 0;
     virtual void reset() = 0;
     virtual std::string getDescription() const = 0;
+    virtual StageType getType() const = 0;
 };
 
-// Specific stage implementations
+// Oscillator Stage
 class OscillatorStage : public DSPStage {
 public:
     OscillatorStage();
-    StageType getType() const override { return StageType::OSCILLATOR; }
     void process(const AudioBuffer& input, AudioBuffer& output) override;
     void setParameter(const std::string& name, const ParamValue& value) override;
     ParamValue getParameter(const std::string& name) const override;
     std::vector<std::string> getParameterNames() const override;
     void reset() override;
     std::string getDescription() const override;
-    
+    StageType getType() const override { return StageType::OSCILLATOR; }
+
 private:
-    RangedParam<Hz> frequency_{Hz{440.0}, Hz{20.0}, Hz{20000.0}, "frequency"};
-    RangedParam<Percent> amplitude_{Percent{0.5}, Percent{0.0}, Percent{1.0}, "amplitude"};
-    RangedParam<Percent> phase_{Percent{0.0}, Percent{0.0}, Percent{1.0}, "phase"};
+    double frequency_ = 440.0;
+    double amplitude_ = 0.5;
+    double phase_ = 0.0;
     std::string waveType_ = "sine";
     double phaseAccumulator_ = 0.0;
     double sampleRate_ = 44100.0;
 };
 
+// Filter Stage
 class FilterStage : public DSPStage {
 public:
     FilterStage();
-    StageType getType() const override { return StageType::FILTER; }
     void process(const AudioBuffer& input, AudioBuffer& output) override;
     void setParameter(const std::string& name, const ParamValue& value) override;
     ParamValue getParameter(const std::string& name) const override;
     std::vector<std::string> getParameterNames() const override;
     void reset() override;
     std::string getDescription() const override;
-    
+    StageType getType() const override { return StageType::FILTER; }
+
 private:
-    RangedParam<Hz> cutoff_{Hz{1000.0}, Hz{20.0}, Hz{20000.0}, "cutoff"};
-    RangedParam<Ratio> resonance_{Ratio{0.1}, Ratio{0.0}, Ratio{0.99}, "resonance"};
+    double cutoff_ = 1000.0;
+    double resonance_ = 0.1;
     std::string filterType_ = "lowpass";
-    double x1_ = 0.0, x2_ = 0.0, y1_ = 0.0, y2_ = 0.0; // State variables
+    double x1_ = 0.0, x2_ = 0.0, y1_ = 0.0, y2_ = 0.0;
 };
 
+// Envelope Stage
 class EnvelopeStage : public DSPStage {
 public:
     EnvelopeStage();
-    StageType getType() const override { return StageType::ENVELOPE; }
     void process(const AudioBuffer& input, AudioBuffer& output) override;
     void setParameter(const std::string& name, const ParamValue& value) override;
     ParamValue getParameter(const std::string& name) const override;
     std::vector<std::string> getParameterNames() const override;
     void reset() override;
     std::string getDescription() const override;
-    
+    StageType getType() const override { return StageType::ENVELOPE; }
+
 private:
-    RangedParam<Seconds> attack_{Seconds{0.01}, Seconds{0.001}, Seconds{2.0}, "attack"};
-    RangedParam<Seconds> decay_{Seconds{0.1}, Seconds{0.001}, Seconds{2.0}, "decay"};
-    RangedParam<Percent> sustain_{Percent{0.7}, Percent{0.0}, Percent{1.0}, "sustain"};
-    RangedParam<Seconds> release_{Seconds{0.5}, Seconds{0.001}, Seconds{5.0}, "release"};
+    enum class EnvState { IDLE, ATTACK, DECAY, SUSTAIN, RELEASE };
     
-    enum class EnvState { ATTACK, DECAY, SUSTAIN, RELEASE, IDLE };
+    double attack_ = 0.01;
+    double decay_ = 0.1;
+    double sustain_ = 0.7;
+    double release_ = 0.5;
     EnvState state_ = EnvState::IDLE;
     double currentLevel_ = 0.0;
     double targetLevel_ = 0.0;
@@ -163,143 +89,68 @@ private:
     size_t sampleCount_ = 0;
 };
 
+// LFO Stage
 class LFOStage : public DSPStage {
 public:
     LFOStage();
-    StageType getType() const override { return StageType::LFO; }
     void process(const AudioBuffer& input, AudioBuffer& output) override;
     void setParameter(const std::string& name, const ParamValue& value) override;
     ParamValue getParameter(const std::string& name) const override;
     std::vector<std::string> getParameterNames() const override;
     void reset() override;
     std::string getDescription() const override;
-    
+    StageType getType() const override { return StageType::LFO; }
+
 private:
-    RangedParam<Hz> rate_{Hz{1.0}, Hz{0.01}, Hz{20.0}, "rate"};
-    RangedParam<Percent> depth_{Percent{0.5}, Percent{0.0}, Percent{1.0}, "depth"};
+    double rate_ = 1.0;
+    double depth_ = 0.5;
     std::string waveType_ = "sine";
     double phase_ = 0.0;
-    double sampleRate_ = 44100.0;
 };
 
-// Routing and connections
-struct Connection {
-    std::string source;
-    std::string destination;
-    std::string parameter; // For modulation connections
-    double amount = 1.0;
-    bool enabled = true;
-};
-
-// DSP Graph representation
+// DSP Graph
 class DSPGraph {
 public:
-    DSPGraph() = default;
-    ~DSPGraph() = default;
-    
-    // Disable copy operations due to unique_ptr members
-    DSPGraph(const DSPGraph&) = delete;
-    DSPGraph& operator=(const DSPGraph&) = delete;
-    
-    // Enable move operations
-    DSPGraph(DSPGraph&&) = default;
-    DSPGraph& operator=(DSPGraph&&) = default;
-    
-    // Graph construction
     void addStage(const std::string& name, std::unique_ptr<DSPStage> stage);
     void removeStage(const std::string& name);
     void addConnection(const Connection& connection);
     void removeConnection(const std::string& source, const std::string& destination);
-    
-    // Graph processing
     void process(const AudioBuffer& input, AudioBuffer& output);
     void reset();
     
-    // Graph analysis
     bool hasCycles() const;
     bool isConnected() const;
     std::vector<std::string> getTopologicalOrder() const;
-    double getTotalGain() const; // For feedback stability
+    double getTotalGain() const;
     
-    // Access
     DSPStage* getStage(const std::string& name);
     const DSPStage* getStage(const std::string& name) const;
     std::vector<std::string> getStageNames() const;
     std::vector<Connection> getConnections() const;
     
-    // Validation
     std::vector<std::string> validate() const;
-    
+
 private:
     std::unordered_map<std::string, std::unique_ptr<DSPStage>> stages_;
     std::vector<Connection> connections_;
     
-    // Graph analysis helpers
     bool hasCycleDFS(const std::string& node, 
-                     std::unordered_set<std::string>& visited,
-                     std::unordered_set<std::string>& recStack) const;
+                    std::unordered_set<std::string>& visited,
+                    std::unordered_set<std::string>& recStack) const;
     void topologicalSortDFS(const std::string& node,
                            std::unordered_set<std::string>& visited,
                            std::vector<std::string>& result) const;
 };
 
-// JSON to IR Parser
+// IR Parser
 class IRParser {
 public:
-    // Parse JSON preset to DSP graph
-    std::unique_ptr<DSPGraph> parsePreset(const std::string& jsonData);
-    
-    // Validate IR structure
-    std::vector<std::string> validate(const DSPGraph& graph);
-    
-    // Compile IR to executable graph
-    std::unique_ptr<DSPGraph> compile(const DSPGraph& ir, 
-                                     const std::map<std::string, double>& runtimeCaps);
-    
-private:
-    // JSON parsing helpers
-    std::unique_ptr<DSPStage> createStageFromJSON(const std::string& type, 
-                                                  const ParamMap& params);
-    ParamMap parseParameters(const std::string& jsonParams);
-    std::vector<Connection> parseConnections(const std::string& jsonConnections);
-    
-    // Validation helpers
-    bool validateParameterRanges(const DSPStage& stage) const;
-    bool validateConnections(const DSPGraph& graph) const;
-    bool validateFeedbackStability(const DSPGraph& graph) const;
-};
+    static std::unique_ptr<DSPGraph> parsePreset(const std::string& jsonData);
+    static std::vector<std::string> validate(const DSPGraph& graph);
 
-// IR Compiler
-class IRCompiler {
-public:
-    struct CompileOptions {
-        bool optimizeForCPU = true;
-        bool enableSIMD = true;
-        bool enableParallel = false;
-        double maxLatency = 10.0; // ms
-        double cpuBudget = 0.8;   // 0-1
-    };
-    
-    // Compile IR to optimized graph
-    std::unique_ptr<DSPGraph> compile(const DSPGraph& ir, 
-                                     const CompileOptions& options);
-    
-    // Estimate CPU cost
-    double estimateCPUCost(const DSPGraph& graph) const;
-    
-    // Estimate latency
-    double estimateLatency(const DSPGraph& graph) const;
-    
 private:
-    // Optimization passes
-    void optimizeForCPU(DSPGraph& graph);
-    void enableSIMD(DSPGraph& graph);
-    void enableParallel(DSPGraph& graph);
-    void optimizeLatency(DSPGraph& graph);
-    
-    // Cost estimation
-    double getStageCost(const DSPStage& stage) const;
-    double getConnectionCost(const Connection& connection) const;
+    static std::unique_ptr<DSPStage> createStageFromJSON(const std::string& type, 
+                                                        const ParamMap& params);
 };
 
 } // namespace aiaudio
