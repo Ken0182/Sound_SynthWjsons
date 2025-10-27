@@ -6,7 +6,9 @@
 #include <vector>
 #include <string>
 #include <memory>
+#ifdef YAMLCPP_FOUND
 #include <yaml-cpp/yaml.h>
+#endif
 
 namespace aiaudio {
 
@@ -63,9 +65,11 @@ public:
     
 private:
     // YAML parsing helpers
+#ifdef YAMLCPP_FOUND
     PolicyConstraint parseConstraint(const YAML::Node& node) const;
     std::map<std::string, double> parsePriors(const YAML::Node& node) const;
     std::map<std::string, double> parsePenalties(const YAML::Node& node) const;
+#endif
     
     // Constraint validation
     bool validateConstraint(const PolicyConstraint& constraint, double value) const;

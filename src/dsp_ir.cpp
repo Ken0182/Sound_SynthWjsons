@@ -4,12 +4,14 @@
 #include <queue>
 #include <sstream>
 #include <fstream>
+#ifdef JSONCPP_FOUND
 #if __has_include(<json/json.h>)
 #  include <json/json.h>
 #elif __has_include(<jsoncpp/json/json.h>)
 #  include <jsoncpp/json/json.h>
 #else
 #  error "jsoncpp headers not found. Install jsoncpp development package."
+#endif
 #endif
 
 namespace aiaudio {
@@ -565,6 +567,7 @@ void DSPGraph::topologicalSortDFS(const std::string& node,
 
 // IRParser implementation
 std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
+#ifdef JSONCPP_FOUND
     auto graph = std::make_unique<DSPGraph>();
     
     Json::Value root;
@@ -575,15 +578,15 @@ std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     }
     
     // Parse stages
-    if (root.isMember(std::string("stages"))) {
-        const auto& stages = root[std::string("stages")];
+    if (root.isMember("stages")) {
+        const auto& stages = root["stages"];
         for (const auto& stageName : stages.getMemberNames()) {
             const auto& stageData = stages[stageName];
-            std::string type = stageData[std::string("type")].asString();
+            std::string type = stageData["type"].asString();
             
             ParamMap params;
-            if (stageData.isMember(std::string("parameters"))) {
-                const auto& paramData = stageData[std::string("parameters")];
+            if (stageData.isMember("parameters")) {
+                const auto& paramData = stageData["parameters"];
                 for (const auto& paramName : paramData.getMemberNames()) {
                     const auto& paramValue = paramData[paramName];
                     if (paramValue.isDouble()) {
@@ -602,26 +605,29 @@ std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     }
     
     // Parse connections
-    if (root.isMember(std::string("connections"))) {
-        const auto& connections = root[std::string("connections")];
+    if (root.isMember("connections")) {
+        const auto& connections = root["connections"];
         for (const auto& conn : connections) {
             Connection connection;
-            connection.source = conn[std::string("source")].asString();
-            connection.destination = conn[std::string("destination")].asString();
-            if (conn.isMember(std::string("parameter"))) {
-                connection.parameter = conn[std::string("parameter")].asString();
+            connection.source = conn["source"].asString();
+            connection.destination = conn["destination"].asString();
+            if (conn.isMember("parameter")) {
+                connection.parameter = conn["parameter"].asString();
             }
-            if (conn.isMember(std::string("amount"))) {
-                connection.amount = conn[std::string("amount")].asDouble();
+            if (conn.isMember("amount")) {
+                connection.amount = conn["amount"].asDouble();
             }
-            if (conn.isMember(std::string("enabled"))) {
-                connection.enabled = conn[std::string("enabled")].asBool();
+            if (conn.isMember("enabled")) {
+                connection.enabled = conn["enabled"].asBool();
             }
             graph->addConnection(connection);
         }
     }
     
     return graph;
+#else
+    throw AIAudioException("JSON parsing not available - jsoncpp not found");
+#endif
 }
 
 std::unique_ptr<DSPStage> IRParser::createStageFromJSON(const std::string& type, 
