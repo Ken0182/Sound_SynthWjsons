@@ -8,6 +8,7 @@ namespace aiaudio {
 
 // PolicyCompiler implementation
 RolePolicy PolicyCompiler::loadPolicy(const std::string& yamlContent, Role role) {
+#ifdef YAMLCPP_FOUND
     YAML::Node root = YAML::Load(yamlContent);
     
     RolePolicy policy;
@@ -37,6 +38,9 @@ RolePolicy PolicyCompiler::loadPolicy(const std::string& yamlContent, Role role)
     }
     
     return policy;
+#else
+    throw AIAudioException("YAML parsing not available - yaml-cpp not found");
+#endif
 }
 
 RolePolicy PolicyCompiler::loadPolicyFromFile(const std::string& filePath, Role role) {
@@ -152,6 +156,7 @@ RolePolicy PolicyCompiler::resolveConflicts(const std::vector<RolePolicy>& polic
     return result;
 }
 
+#ifdef YAMLCPP_FOUND
 PolicyConstraint PolicyCompiler::parseConstraint(const YAML::Node& node) const {
     PolicyConstraint constraint;
     
@@ -180,7 +185,9 @@ PolicyConstraint PolicyCompiler::parseConstraint(const YAML::Node& node) const {
     
     return constraint;
 }
+#endif
 
+#ifdef YAMLCPP_FOUND
 std::map<std::string, double> PolicyCompiler::parsePriors(const YAML::Node& node) const {
     std::map<std::string, double> priors;
     
@@ -192,7 +199,9 @@ std::map<std::string, double> PolicyCompiler::parsePriors(const YAML::Node& node
     
     return priors;
 }
+#endif
 
+#ifdef YAMLCPP_FOUND
 std::map<std::string, double> PolicyCompiler::parsePenalties(const YAML::Node& node) const {
     std::map<std::string, double> penalties;
     
@@ -204,6 +213,7 @@ std::map<std::string, double> PolicyCompiler::parsePenalties(const YAML::Node& n
     
     return penalties;
 }
+#endif
 
 // PolicyEngine implementation
 void PolicyEngine::applyPolicy(DSPGraph& graph, const RolePolicy& policy, 

@@ -14,10 +14,20 @@ add_library(aiaudio_core
 
 # Link libraries
 target_link_libraries(aiaudio_core
-    ${JSONCPP_LIBRARIES}
-    ${YAMLCPP_LIBRARIES}
     Threads::Threads
 )
+
+# Conditionally link jsoncpp if available
+if(JSONCPP_FOUND)
+    target_link_libraries(aiaudio_core ${JSONCPP_LIBRARIES})
+    target_compile_definitions(aiaudio_core PRIVATE JSONCPP_FOUND)
+endif()
+
+# Conditionally link yaml-cpp if available
+if(YAMLCPP_FOUND)
+    target_link_libraries(aiaudio_core ${YAMLCPP_LIBRARIES})
+    target_compile_definitions(aiaudio_core PRIVATE YAMLCPP_FOUND)
+endif()
 
 # Link math library on non-Windows
 if(UNIX AND NOT APPLE)
@@ -34,7 +44,12 @@ target_include_directories(aiaudio_core PUBLIC
 add_executable(aiaudio_generator main.cpp)
 
 # Link with the core library and JSON library
-target_link_libraries(aiaudio_generator aiaudio_core ${JSONCPP_LIBRARIES})
+target_link_libraries(aiaudio_generator aiaudio_core)
+
+# Conditionally link jsoncpp if available
+if(JSONCPP_FOUND)
+    target_link_libraries(aiaudio_generator ${JSONCPP_LIBRARIES})
+endif()
 
 # Set C++ standard
 set_target_properties(aiaudio_core PROPERTIES
