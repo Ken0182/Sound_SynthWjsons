@@ -381,7 +381,6 @@ src/aiaudio_generator: /lib/x86_64-linux-gnu/Scrt1.o \
   /lib/x86_64-linux-gnu/libm.so \
   /lib/x86_64-linux-gnu/libm.so.6 \
   /lib/x86_64-linux-gnu/libmvec.so.1 \
-  /lib/x86_64-linux-gnu/libpthread.a \
   /lib/x86_64-linux-gnu/libyaml-cpp.so \
   /lib64/ld-linux-x86-64.so.2 \
   /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o \
@@ -408,8 +407,6 @@ src/CMakeFiles/aiaudio_generator.dir/main.cpp.o:
 /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o:
 
 /lib/x86_64-linux-gnu/libyaml-cpp.so:
-
-/lib/x86_64-linux-gnu/libpthread.a:
 
 /lib/x86_64-linux-gnu/libgcc_s.so.1:
 
