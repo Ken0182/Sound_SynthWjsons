@@ -4,7 +4,7 @@
 #include <queue>
 #include <sstream>
 #include <fstream>
-#include <json/json.h>
+#include <nlohmann/json.hpp>
 
 namespace aiaudio {
 
@@ -561,31 +561,29 @@ void DSPGraph::topologicalSortDFS(const std::string& node,
 std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     auto graph = std::make_unique<DSPGraph>();
     
-    Json::Value root;
-    Json::Reader reader;
-    
-    if (!reader.parse(jsonData, root)) {
-        throw AIAudioException("Failed to parse JSON: " + reader.getFormattedErrorMessages());
+    nlohmann::json root;
+    try {
+        root = nlohmann::json::parse(jsonData);
+    } catch (const nlohmann::json::parse_error& e) {
+        throw AIAudioException("Failed to parse JSON: " + std::string(e.what()));
     }
     
     // Parse stages
-    if (root.isMember("stages")) {
+    if (root.contains("stages")) {
         const auto& stages = root["stages"];
-        for (const auto& stageName : stages.getMemberNames()) {
-            const auto& stageData = stages[stageName];
-            std::string type = stageData["type"].asString();
+        for (auto& [stageName, stageData] : stages.items()) {
+            std::string type = stageData["type"].get<std::string>();
             
             ParamMap params;
-            if (stageData.isMember("parameters")) {
+            if (stageData.contains("parameters")) {
                 const auto& paramData = stageData["parameters"];
-                for (const auto& paramName : paramData.getMemberNames()) {
-                    const auto& paramValue = paramData[paramName];
-                    if (paramValue.isDouble()) {
-                        params[paramName] = paramValue.asDouble();
-                    } else if (paramValue.isString()) {
-                        params[paramName] = paramValue.asString();
-                    } else if (paramValue.isBool()) {
-                        params[paramName] = paramValue.asBool();
+                for (auto& [paramName, paramValue] : paramData.items()) {
+                    if (paramValue.is_number()) {
+                        params[paramName] = paramValue.get<double>();
+                    } else if (paramValue.is_string()) {
+                        params[paramName] = paramValue.get<std::string>();
+                    } else if (paramValue.is_boolean()) {
+                        params[paramName] = paramValue.get<bool>();
                     }
                 }
             }
@@ -596,20 +594,20 @@ std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     }
     
     // Parse connections
-    if (root.isMember("connections")) {
+    if (root.contains("connections")) {
         const auto& connections = root["connections"];
         for (const auto& conn : connections) {
             Connection connection;
-            connection.source = conn["source"].asString();
-            connection.destination = conn["destination"].asString();
-            if (conn.isMember("parameter")) {
-                connection.parameter = conn["parameter"].asString();
+            connection.source = conn["source"].get<std::string>();
+            connection.destination = conn["destination"].get<std::string>();
+            if (conn.contains("parameter")) {
+                connection.parameter = conn["parameter"].get<std::string>();
             }
-            if (conn.isMember("amount")) {
-                connection.amount = conn["amount"].asDouble();
+            if (conn.contains("amount")) {
+                connection.amount = conn["amount"].get<double>();
             }
-            if (conn.isMember("enabled")) {
-                connection.enabled = conn["enabled"].asBool();
+            if (conn.contains("enabled")) {
+                connection.enabled = conn["enabled"].get<bool>();
             }
             graph->addConnection(connection);
         }

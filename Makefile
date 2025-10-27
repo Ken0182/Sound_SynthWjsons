@@ -18,8 +18,8 @@ DIST_DIR = dist
 # Compiler flags
 CXXFLAGS = -std=c++20 -O3 -march=native -ffast-math -Wall -Wextra
 DEBUG_FLAGS = -g -O0 -DDEBUG
-INCLUDES = -I$(INCLUDE_DIR) -I/usr/include/opencv4
-LIBS = -lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lnlohmann_json -lpthread -lm
+INCLUDES = -I$(INCLUDE_DIR)
+LIBS = -lnlohmann_json -lyaml-cpp -lpthread -lm
 
 # Python dependencies
 PYTHON_DEPS = requirements.txt
@@ -35,11 +35,38 @@ all: build-cpp build-python build-web
 .PHONY: build-cpp
 build-cpp: $(BUILD_DIR)/$(PROJECT_NAME)
 
+.PHONY: build-debug
+build-debug: $(BUILD_DIR)-debug/$(PROJECT_NAME)
+
+.PHONY: build-ninja
+build-ninja: $(BUILD_DIR)-ninja/$(PROJECT_NAME)
+
+.PHONY: build-msys2
+build-msys2: $(BUILD_DIR)-msys2/$(PROJECT_NAME)
+
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
+$(BUILD_DIR)-debug:
+	mkdir -p $(BUILD_DIR)-debug
+
+$(BUILD_DIR)-ninja:
+	mkdir -p $(BUILD_DIR)-ninja
+
+$(BUILD_DIR)-msys2:
+	mkdir -p $(BUILD_DIR)-msys2
+
 $(BUILD_DIR)/$(PROJECT_NAME): $(BUILD_DIR)
-	cd $(BUILD_DIR) && $(CMAKE) .. && $(MAKE)
+	cd $(BUILD_DIR) && $(CMAKE) .. -DCMAKE_BUILD_TYPE=Release && $(MAKE)
+
+$(BUILD_DIR)-debug/$(PROJECT_NAME): $(BUILD_DIR)-debug
+	cd $(BUILD_DIR)-debug && $(CMAKE) .. -DCMAKE_BUILD_TYPE=Debug && $(MAKE)
+
+$(BUILD_DIR)-ninja/$(PROJECT_NAME): $(BUILD_DIR)-ninja
+	cd $(BUILD_DIR)-ninja && $(CMAKE) .. -G Ninja -DCMAKE_BUILD_TYPE=Release && ninja
+
+$(BUILD_DIR)-msys2/$(PROJECT_NAME): $(BUILD_DIR)-msys2
+	cd $(BUILD_DIR)-msys2 && $(CMAKE) .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release && $(MAKE)
 
 # Python build and setup
 .PHONY: build-python
@@ -153,8 +180,9 @@ install-deps: install-system-deps install-python-deps install-web-deps
 install-system-deps:
 	sudo apt-get update
 	sudo apt-get install -y cmake g++ python3 python3-pip nodejs npm
-	sudo apt-get install -y libopencv-dev libyaml-cpp-dev nlohmann-json3-dev
+	sudo apt-get install -y libyaml-cpp-dev nlohmann-json3-dev
 	sudo apt-get install -y libgtest-dev libgmock-dev pkg-config
+	@echo "Note: OpenCV is optional and will be detected automatically if available"
 
 .PHONY: install-web-deps
 install-web-deps: $(WEB_DIR)/package.json
@@ -167,7 +195,10 @@ help:
 	@echo ""
 	@echo "Build Targets:"
 	@echo "  all          - Build everything (C++, Python, Web)"
-	@echo "  build-cpp    - Build C++ audio engine"
+	@echo "  build-cpp    - Build C++ audio engine (Release)"
+	@echo "  build-debug  - Build C++ audio engine (Debug)"
+	@echo "  build-ninja  - Build C++ audio engine with Ninja"
+	@echo "  build-msys2  - Build C++ audio engine for MSYS2/MinGW"
 	@echo "  build-python - Install Python dependencies"
 	@echo "  build-web    - Build web interface"
 	@echo ""

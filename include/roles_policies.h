@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core_types.h"
+#include "dsp_ir.h"
 #include <map>
 #include <vector>
 #include <string>
@@ -66,9 +67,6 @@ private:
     std::map<std::string, double> parsePriors(const YAML::Node& node) const;
     std::map<std::string, double> parsePenalties(const YAML::Node& node) const;
     
-    // Constraint validation
-    bool validateConstraint(const PolicyConstraint& constraint, double value) const;
-    double computeViolationPenalty(const PolicyConstraint& constraint, double value) const;
 };
 
 // Policy application engine
@@ -92,6 +90,10 @@ public:
     // Get policy recommendations
     std::vector<std::string> getRecommendations(const DSPGraph& graph, 
                                                const RolePolicy& policy) const;
+    
+    // Constraint validation
+    bool validateConstraint(const PolicyConstraint& constraint, double value) const;
+    double computeViolationPenalty(const PolicyConstraint& constraint, double value) const;
     
 private:
     // Role-specific transformations

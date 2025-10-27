@@ -47,30 +47,94 @@ A research-grade, production-minded, over-engineered AI audio generation system 
 
 - C++20 compatible compiler (GCC 10+, Clang 12+, MSVC 2019+)
 - CMake 3.20+
-- OpenCV 4.x
-- nlohmann/json
-- yaml-cpp
+- nlohmann/json (required)
+- yaml-cpp (required)
+- OpenCV 4.x (optional - will be detected automatically)
 
-### Build Instructions
+### Quick Start
 
 ```bash
-mkdir build
-cd build
-cmake ..
-make -j$(nproc)
+# Install dependencies (Ubuntu/Debian)
+sudo apt-get update
+sudo apt-get install -y cmake g++ python3 python3-pip nodejs npm
+sudo apt-get install -y libyaml-cpp-dev nlohmann-json3-dev
+sudo apt-get install -y libgtest-dev libgmock-dev pkg-config
+
+# Build the project
+make build-cpp
+```
+
+### Build Options
+
+```bash
+# Standard build
+make build-cpp
+
+# Debug build
+make build-debug
+
+# Ninja build (if available)
+make build-ninja
+
+# MSYS2 MinGW build (Windows)
+make build-msys2
+
+# Build everything (C++, Python, Web)
+make all
+```
+
+### Platform-Specific Instructions
+
+#### Windows (MSYS2)
+```bash
+# Install MSYS2, then:
+pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc
+pacman -S mingw-w64-x86_64-yaml-cpp mingw-w64-x86_64-nlohmann-json
+make build-msys2
+```
+
+#### macOS
+```bash
+# Install dependencies with Homebrew
+brew install cmake yaml-cpp nlohmann-json
+make build-cpp
+```
+
+#### Linux
+```bash
+# Ubuntu/Debian
+sudo apt-get install -y libyaml-cpp-dev nlohmann-json3-dev
+make build-cpp
+
+# Fedora/CentOS
+sudo dnf install -y yaml-cpp-devel nlohmann-json-devel
+make build-cpp
+```
+
+### CMake Presets
+
+```bash
+# Configure with presets
+cmake --preset default
+cmake --preset debug
+cmake --preset ninja
+cmake --preset msys2  # Windows only
+
+# Build with presets
+cmake --build --preset default
 ```
 
 ### Dependencies
 
 ```bash
 # Ubuntu/Debian
-sudo apt-get install libopencv-dev nlohmann-json3-dev libyaml-cpp-dev
+sudo apt-get install libyaml-cpp-dev nlohmann-json3-dev
 
 # macOS
-brew install opencv nlohmann-json yaml-cpp
+brew install yaml-cpp nlohmann-json
 
 # Windows (vcpkg)
-vcpkg install opencv nlohmann-json yaml-cpp
+vcpkg install yaml-cpp nlohmann-json
 ```
 
 ## Usage

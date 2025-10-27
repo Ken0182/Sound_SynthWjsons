@@ -1,0 +1,8 @@
+/workspace/build/CMakeFiles/aiaudio_generator.dir
+/workspace/build/CMakeFiles/edit_cache.dir
+/workspace/build/CMakeFiles/rebuild_cache.dir
+/workspace/build/src/CMakeFiles/edit_cache.dir
+/workspace/build/src/CMakeFiles/rebuild_cache.dir
+/workspace/build/tests/CMakeFiles/aiaudio_tests.dir
+/workspace/build/tests/CMakeFiles/edit_cache.dir
+/workspace/build/tests/CMakeFiles/rebuild_cache.dir

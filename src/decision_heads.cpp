@@ -8,7 +8,7 @@ namespace aiaudio {
 
 // DecisionMLP implementation
 DecisionMLP::DecisionMLP(size_t inputSize, const std::vector<size_t>& hiddenSizes, size_t outputSize)
-    : inputSize_(inputSize), outputSize_(outputSize) {
+    : inputSize(inputSize), outputSize(outputSize) {
     
     // Create layers
     size_t prevSize = inputSize;
@@ -32,7 +32,7 @@ DecisionMLP::DecisionMLP(size_t inputSize, const std::vector<size_t>& hiddenSize
 }
 
 std::vector<double> DecisionMLP::forward(const std::vector<double>& input) const {
-    if (input.size() != inputSize_) {
+    if (input.size() != inputSize) {
         throw AIAudioException("Input size mismatch");
     }
     
@@ -172,7 +172,11 @@ DecisionOutput DecisionHeads::infer(const DecisionContext& context) const {
     
     // Map to parameters and routes
     result.parameterValues = mapValuesToParameters(result.values, context.role);
-    result.routingMask = mapRoutesToTargets(result.routes, DSPGraph{}); // Would need actual graph
+    // result.routingMask = mapRoutesToTargets(result.routes, DSPGraph{}); // Would need actual graph
+    // Placeholder routing mask
+    for (size_t i = 0; i < result.routes.size(); ++i) {
+        result.routingMask["route_" + std::to_string(i)] = result.routes[i];
+    }
     
     return result;
 }
@@ -217,9 +221,9 @@ DecisionOutput DecisionHeads::addJitter(const DecisionOutput& decisions, double 
     }
     
     // Add jitter to routes (with lower probability)
-    for (bool& route : jittered.routes) {
+    for (size_t i = 0; i < jittered.routes.size(); ++i) {
         if (dist(gen) < sigma) {
-            route = !route;
+            jittered.routes[i] = !jittered.routes[i];
         }
     }
     
@@ -541,8 +545,8 @@ DecisionOutput DecisionTrainer::generateTargetFromContext(const DecisionContext&
     
     // Generate routes
     target.routes.resize(10);
-    for (bool& route : target.routes) {
-        route = dist(gen) > 0.5;
+    for (size_t i = 0; i < target.routes.size(); ++i) {
+        target.routes[i] = dist(gen) > 0.5;
     }
     
     target.confidence = 0.8; // Default confidence

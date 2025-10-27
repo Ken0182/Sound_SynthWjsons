@@ -1,11 +1,13 @@
 #pragma once
 
 #include "core_types.h"
+#include "dsp_ir.h"
 #include "semantic_fusion.h"
 #include <vector>
 #include <memory>
 #include <map>
 #include <random>
+#include <iostream>
 
 namespace aiaudio {
 

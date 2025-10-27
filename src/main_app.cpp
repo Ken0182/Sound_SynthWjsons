@@ -7,6 +7,21 @@
 
 namespace aiaudio {
 
+// Helper function to convert Role to string
+std::string roleToString(Role role) {
+    switch (role) {
+        case Role::PAD: return "pad";
+        case Role::BASS: return "bass";
+        case Role::LEAD: return "lead";
+        case Role::DRUM: return "drum";
+        case Role::PERCUSSION: return "percussion";
+        case Role::AMBIENT: return "ambient";
+        case Role::TEXTURE: return "texture";
+        case Role::UNKNOWN: return "unknown";
+        default: return "unknown";
+    }
+}
+
 // AIAudioGenerator implementation
 AIAudioGenerator::AIAudioGenerator() {
     initializeComponents();
@@ -228,7 +243,7 @@ AudioBuffer AIAudioGenerator::renderGraph(const DSPGraph& graph, size_t numSampl
     AudioBuffer input(numSamples, 0.0); // Silent input
     AudioBuffer output;
     
-    graph.process(input, output);
+    const_cast<DSPGraph&>(graph).process(input, output);
     
     return output;
 }
@@ -283,7 +298,8 @@ std::vector<std::string> AIAudioGenerator::checkWarnings(const AudioBuffer& audi
 
 std::string AIAudioGenerator::generateExplanation(const GenerationRequest& request, const DSPGraph& graph) {
     std::stringstream explanation;
-    explanation << "Generated " << request.role << " sound for prompt: \"" << request.prompt << "\"\n";
+    std::string roleStr = roleToString(request.role);
+    explanation << "Generated " << roleStr << " sound for prompt: \"" << request.prompt << "\"\n";
     explanation << "Graph contains " << graph.getStageNames().size() << " stages\n";
     explanation << "Tempo: " << request.context.tempo << " BPM\n";
     explanation << "Key: " << request.context.key << "\n";
@@ -299,7 +315,7 @@ void AIAudioGenerator::initializeComponents() {
     policyManager_ = std::make_unique<PolicyManager>();
     
     // Create decision heads with simple MLP
-    auto mlp = std::make_unique<DecisionMLP>(400, {256, 128}, 20); // 400 input, 20 output
+    auto mlp = std::make_unique<DecisionMLP>(400, std::vector<size_t>{256, 128}, 20); // 400 input, 20 output
     decisionHeads_ = std::make_unique<DecisionHeads>(std::move(mlp));
 }
 
@@ -444,7 +460,7 @@ AudioBuffer AudioRenderer::render(const DSPGraph& graph, size_t numSamples, doub
     AudioBuffer input(numSamples, 0.0);
     AudioBuffer output;
     
-    graph.process(input, output);
+    const_cast<DSPGraph&>(graph).process(input, output);
     
     auto endTime = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
