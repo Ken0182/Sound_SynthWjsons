@@ -33,8 +33,8 @@ target_include_directories(aiaudio_core PUBLIC
 # Create the main executable
 add_executable(aiaudio_generator main.cpp)
 
-# Link with the core library
-target_link_libraries(aiaudio_generator aiaudio_core)
+# Link with the core library and JSON library
+target_link_libraries(aiaudio_generator aiaudio_core ${JSONCPP_LIBRARIES})
 
 # Set C++ standard
 set_target_properties(aiaudio_core PROPERTIES

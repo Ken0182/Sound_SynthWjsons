@@ -575,15 +575,15 @@ std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     }
     
     // Parse stages
-    if (root.isMember("stages")) {
-        const auto& stages = root["stages"];
+    if (root.isMember(std::string("stages"))) {
+        const auto& stages = root[std::string("stages")];
         for (const auto& stageName : stages.getMemberNames()) {
             const auto& stageData = stages[stageName];
-            std::string type = stageData["type"].asString();
+            std::string type = stageData[std::string("type")].asString();
             
             ParamMap params;
-            if (stageData.isMember("parameters")) {
-                const auto& paramData = stageData["parameters"];
+            if (stageData.isMember(std::string("parameters"))) {
+                const auto& paramData = stageData[std::string("parameters")];
                 for (const auto& paramName : paramData.getMemberNames()) {
                     const auto& paramValue = paramData[paramName];
                     if (paramValue.isDouble()) {
@@ -602,20 +602,20 @@ std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     }
     
     // Parse connections
-    if (root.isMember("connections")) {
-        const auto& connections = root["connections"];
+    if (root.isMember(std::string("connections"))) {
+        const auto& connections = root[std::string("connections")];
         for (const auto& conn : connections) {
             Connection connection;
-            connection.source = conn["source"].asString();
-            connection.destination = conn["destination"].asString();
-            if (conn.isMember("parameter")) {
-                connection.parameter = conn["parameter"].asString();
+            connection.source = conn[std::string("source")].asString();
+            connection.destination = conn[std::string("destination")].asString();
+            if (conn.isMember(std::string("parameter"))) {
+                connection.parameter = conn[std::string("parameter")].asString();
             }
-            if (conn.isMember("amount")) {
-                connection.amount = conn["amount"].asDouble();
+            if (conn.isMember(std::string("amount"))) {
+                connection.amount = conn[std::string("amount")].asDouble();
             }
-            if (conn.isMember("enabled")) {
-                connection.enabled = conn["enabled"].asBool();
+            if (conn.isMember(std::string("enabled"))) {
+                connection.enabled = conn[std::string("enabled")].asBool();
             }
             graph->addConnection(connection);
         }
