@@ -271,8 +271,11 @@ PKG_CONFIG_EXECUTABLE:FILEPATH=/usr/bin/pkg-config
 //The directory containing a CMake configuration file for jsoncpp.
 jsoncpp_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/jsoncpp
 
+//The directory containing a CMake configuration file for pybind11.
+pybind11_DIR:PATH=pybind11_DIR-NOTFOUND
+
 //The directory containing a CMake configuration file for yaml-cpp.
-yaml-cpp_DIR:PATH=yaml-cpp_DIR-NOTFOUND
+yaml-cpp_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/yaml-cpp
 
 
 ########################
@@ -385,7 +388,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=2
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
