@@ -575,17 +575,17 @@ std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     }
     
     // Parse stages
-    if (root.isMember(Json::String("stages"))) {
-        const auto& stages = root[Json::String("stages")];
+    if (root.isMember("stages")) {
+        const auto& stages = root["stages"];
         for (const auto& stageName : stages.getMemberNames()) {
-            const auto& stageData = stages[Json::String(stageName)];
-            std::string type = stageData[Json::String("type")].asString();
+            const auto& stageData = stages[stageName.c_str()];
+            std::string type = stageData["type"].asString();
             
             ParamMap params;
-            if (stageData.isMember(Json::String("parameters"))) {
-                const auto& paramData = stageData[Json::String("parameters")];
+            if (stageData.isMember("parameters")) {
+                const auto& paramData = stageData["parameters"];
                 for (const auto& paramName : paramData.getMemberNames()) {
-                    const auto& paramValue = paramData[Json::String(paramName)];
+                    const auto& paramValue = paramData[paramName.c_str()];
                     if (paramValue.isDouble()) {
                         params[paramName] = paramValue.asDouble();
                     } else if (paramValue.isString()) {
@@ -602,20 +602,20 @@ std::unique_ptr<DSPGraph> IRParser::parsePreset(const std::string& jsonData) {
     }
     
     // Parse connections
-    if (root.isMember(Json::String("connections"))) {
-        const auto& connections = root[Json::String("connections")];
+    if (root.isMember("connections")) {
+        const auto& connections = root["connections"];
         for (const auto& conn : connections) {
             Connection connection;
-            connection.source = conn[Json::String("source")].asString();
-            connection.destination = conn[Json::String("destination")].asString();
-            if (conn.isMember(Json::String("parameter"))) {
-                connection.parameter = conn[Json::String("parameter")].asString();
+            connection.source = conn["source"].asString();
+            connection.destination = conn["destination"].asString();
+            if (conn.isMember("parameter")) {
+                connection.parameter = conn["parameter"].asString();
             }
-            if (conn.isMember(Json::String("amount"))) {
-                connection.amount = conn[Json::String("amount")].asDouble();
+            if (conn.isMember("amount")) {
+                connection.amount = conn["amount"].asDouble();
             }
-            if (conn.isMember(Json::String("enabled"))) {
-                connection.enabled = conn[Json::String("enabled")].asBool();
+            if (conn.isMember("enabled")) {
+                connection.enabled = conn["enabled"].asBool();
             }
             graph->addConnection(connection);
         }
